@@ -17,6 +17,7 @@ import {
   PDF_FIT_CYCLE_BUTTON_CLASS,
   PDF_FIT_CYCLE_LABEL_CLASS,
   PDF_ZOOM_PERCENT_BUTTON_CLASS,
+  PDF_ZOOM_STEP_BUTTON_CLASS,
   useCyclingFitMode,
   type PdfFitMode,
 } from "../hooks/use-cycling-fit-mode";
@@ -62,7 +63,7 @@ export function ZoomControls({
         onClick={zoomOut}
         disabled={atMinZoom}
         title="Zoom out"
-        className={buttonClass}
+        className={`${PDF_ZOOM_STEP_BUTTON_CLASS} ${buttonClass}`}
       >
         −
       </button>
@@ -79,7 +80,7 @@ export function ZoomControls({
         onClick={zoomIn}
         disabled={atMaxZoom}
         title="Zoom in"
-        className={buttonClass}
+        className={`${PDF_ZOOM_STEP_BUTTON_CLASS} ${buttonClass}`}
       >
         +
       </button>

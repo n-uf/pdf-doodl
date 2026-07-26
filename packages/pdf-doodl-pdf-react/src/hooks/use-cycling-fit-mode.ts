@@ -54,6 +54,8 @@ export function getPdfFitModeDescriptor(mode: PdfFitMode): PdfFitModeDescriptor 
  * Fixed width on the fit-cycle button (scales with button font-size via `ch`).
  * Sized for longest icon+label ("↕ Height") plus typical `px-2` padding under
  * border-box — keep width on the outer control, not only the inner label.
+ *
+ * Tailwind hosts: `@source` this package so `w-[12ch]` is not purged.
  */
 export const PDF_FIT_CYCLE_BUTTON_CLASS =
   "inline-flex w-[12ch] shrink-0 items-center justify-center whitespace-nowrap";
@@ -63,12 +65,18 @@ export const PDF_FIT_CYCLE_LABEL_CLASS =
   "inline-flex items-center justify-center gap-0.5";
 
 /**
+ * Identical fixed square for zoom − / + so glyph width cannot skew the strip.
+ * Pair with a chrome class; prefer `p-0` (or override padding) on the host.
+ */
+export const PDF_ZOOM_STEP_BUTTON_CLASS =
+  "inline-flex size-6 shrink-0 items-center justify-center p-0";
+
+/**
  * Fixed width for zoom percent button — fits max scale label ("300%") plus
  * typical `px-2` padding under border-box.
  */
 export const PDF_ZOOM_PERCENT_BUTTON_CLASS =
   "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums";
-
 export function nextPdfFitMode(mode: PdfFitMode): PdfFitMode {
   const index = PDF_FIT_MODE_ORDER.indexOf(mode);
   const nextIndex = (index + 1) % PDF_FIT_MODE_ORDER.length;

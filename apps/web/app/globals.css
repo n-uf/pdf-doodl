@@ -5,6 +5,8 @@
 @source "../../../packages/pdf-doodl/**/*.{ts,tsx}";
 @source "../../../packages/pdf-doodl-go/**/*.{ts,tsx}";
 @source "../../../packages/pdf-doodl-react/**/*.{ts,tsx}";
+/* Class-token constants (w-[7ch], etc.) live only in this package’s TS. */
+@source "../../../packages/pdf-doodl-pdf-react/src/**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 

@@ -3,10 +3,15 @@
 /**
  * FindBar - Optional default UI for `usePdfFind`
  *
- * A minimal, unopinionated find-in-PDF input strip (query, match count,
- * prev/next, case-sensitive toggle, clear). Consumers who want fully custom
- * chrome should use `usePdfFind` directly and build their own UI — this
- * component exists so simple integrations don't have to hand-roll one.
+ * A minimal, unopinionated find-in-PDF input strip (query + in-field clear,
+ * match count, prev/next, case-sensitive toggle). Consumers who want fully
+ * custom chrome should use `usePdfFind` directly and build their own UI —
+ * this component exists so simple integrations don't have to hand-roll one.
+ *
+ * ## Tailwind consumers
+ * Class tokens below are plain string constants. Host apps that use Tailwind
+ * must `@source` this package (src or dist) so utilities like `w-[7ch]` are
+ * generated — importing the constant alone does not keep classes from purge.
  */
 
 import { useEffect, useRef, type KeyboardEvent, type ReactElement } from "react";
@@ -39,27 +44,49 @@ const DEFAULT_BUTTON_CLASS =
 export const FIND_BAR_MATCH_COUNT_CLASS =
   "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums text-center";
 
+/** Relative wrapper for the find input + absolute clear control. */
+export const FIND_BAR_INPUT_WRAP_CLASS = "relative min-w-0 flex-1";
+
+/** Right padding so typed text does not sit under the clear control. */
+export const FIND_BAR_INPUT_WITH_CLEAR_CLASS = "w-full pr-7";
+
 /**
- * Fixed square for the case-sensitive (Aa) toggle so `font-semibold` on press
- * cannot expand the control.
+ * Absolute clear (✕) inside the find input’s right edge. 24×24 hit target;
+ * show only when `query.length > 0`.
+ */
+export const FIND_BAR_CLEAR_BUTTON_CLASS =
+  "absolute right-0.5 top-1/2 z-10 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-sm text-current/55 hover:bg-current/10 hover:text-current";
+
+/**
+ * Fixed square for the case-sensitive (Aa) toggle so ON fill / bold cannot
+ * expand the control.
  */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_CLASS =
-  "inline-flex w-[2.25rem] shrink-0 items-center justify-center";
+  "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-xs";
 
-/** Muted off-state styling for the case-sensitive (Aa) toggle. */
+/**
+ * OFF: muted ghost outline only — no fill. Distinct from ON without relying
+ * on opacity alone for the whole control.
+ */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS =
-  "text-current/40 bg-transparent border-current/15";
+  "bg-transparent text-current/55 border border-current/30 font-normal no-underline shadow-none";
 
-/** Active on-state styling for the case-sensitive (Aa) toggle (aria-pressed=true). */
+/**
+ * ON (`aria-pressed=true`): solid filled + high-contrast text + underline.
+ * Must remain readable as “on” without inspecting aria attributes.
+ */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS =
-  "aria-pressed:text-current aria-pressed:border-current/55 aria-pressed:bg-current/18 aria-pressed:font-semibold";
+  "aria-pressed:bg-current aria-pressed:text-white aria-pressed:border-current aria-pressed:font-bold aria-pressed:underline aria-pressed:decoration-2 aria-pressed:underline-offset-2 aria-pressed:hover:bg-current aria-pressed:hover:text-white";
 
-/** Full size + off/on styling — pair with a base button class. */
+/** Full size + off/on styling — pair with a base button class (avoid text-muted). */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS = `${FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_CLASS} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS}`;
 
-/** Accent-token override for on-state when the host app defines accent colors. */
+/**
+ * Accent-token ON override when the host defines `--color-accent` / `accent`
+ * and a contrasting `bg` (or `Canvas`) text color.
+ */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ACCENT_ON_CLASS =
-  "aria-pressed:border-accent/40 aria-pressed:bg-accent/15 aria-pressed:text-accent";
+  "aria-pressed:bg-accent aria-pressed:text-bg aria-pressed:border-accent aria-pressed:hover:bg-accent aria-pressed:hover:text-bg";
 
 export function FindBar({
   find,
@@ -84,6 +111,7 @@ export function FindBar({
   } = find;
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasQuery = query.length > 0;
 
   useEffect(() => {
     if (autoFocus) {
@@ -119,15 +147,28 @@ export function FindBar({
 
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      <input
-        ref={inputRef}
-        type="text"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        className={`px-2 py-1 text-xs border border-current/20 rounded-sm bg-transparent focus:outline-none ${inputClassName}`}
-      />
+      <div className={FIND_BAR_INPUT_WRAP_CLASS}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className={`px-2 py-1 text-xs border border-current/20 rounded-sm bg-transparent focus:outline-none ${FIND_BAR_INPUT_WITH_CLEAR_CLASS} ${inputClassName}`}
+        />
+        {hasQuery ? (
+          <button
+            type="button"
+            onClick={clear}
+            title="Clear (Esc)"
+            aria-label="Clear search"
+            className={FIND_BAR_CLEAR_BUTTON_CLASS}
+          >
+            ✕
+          </button>
+        ) : null}
+      </div>
       <span
         className={`${FIND_BAR_MATCH_COUNT_CLASS} text-xs opacity-70`}
         aria-live="polite"
@@ -152,26 +193,20 @@ export function FindBar({
       >
         ↓
       </button>
-      {showCaseSensitiveToggle && (
+      {showCaseSensitiveToggle ? (
         <button
           type="button"
           onClick={() => setCaseSensitive(!caseSensitive)}
-          title="Case-sensitive"
+          title={caseSensitive ? "Case-sensitive (on)" : "Case-sensitive (off)"}
+          aria-label={
+            caseSensitive ? "Case-sensitive: on" : "Case-sensitive: off"
+          }
           aria-pressed={caseSensitive}
           className={`${buttonClass} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS}`}
         >
           Aa
         </button>
-      )}
-      <button
-        type="button"
-        onClick={clear}
-        disabled={query.length === 0}
-        title="Clear (Esc)"
-        className={buttonClass}
-      >
-        ✕
-      </button>
+      ) : null}
     </div>
   );
 }
