@@ -67,6 +67,8 @@ export interface RenderStateProvider {
   getEditState?: () => ShapeEditState | null;
   /** Get active ping effects */
   getPingEffects?: () => PingEffect[];
+  /** When true, skip resize-handle chrome (selection-only / readOnly) */
+  isReadOnly?: () => boolean;
 }
 
 /**
@@ -490,8 +492,9 @@ export class RenderDriver {
           renderShapeEditMode(ctx, editingShape, editState);
         }
       }
-    } else {
-      // Render selection UI (delegated to shape modules)
+    } else if (!this._stateProvider.isReadOnly?.()) {
+      // Render selection UI (delegated to shape modules).
+      // Skipped in readOnly — consumers style selection via shape props.
       const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
       for (const shape of selectedShapes) {
         const shouldRenderSelection =

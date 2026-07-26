@@ -80,8 +80,17 @@ export interface DoodlOptions {
   backgroundColor?: string;
   /** Scale factor for rendering */
   scale?: number;
-  /** Read-only mode */
+  /**
+   * Selection-only mode (default: false).
+   * Disables drawing, drag, resize, delete, and history mutations.
+   * Pointer selection and programmatic `select()` still work.
+   */
   readOnly?: boolean;
+  /**
+   * Allow activation-frame `ping()` animation (default: true).
+   * When false, `ping()` is a no-op (locate/select still work).
+   */
+  enablePing?: boolean;
   /** Text layer element for text-highlight tool (optional) */
   textLayer?: HTMLElement;
   /** Selection driver options */
@@ -167,6 +176,7 @@ export class Doodl {
 
   // Options
   private _readOnly: boolean;
+  private _enablePing: boolean;
   private _scale: number;
   private _selectionOptions: Omit<SelectionDriverOptions, "scale">;
   private _mergeHighlights: boolean;
@@ -186,12 +196,18 @@ export class Doodl {
     this._tool = options.initialTool ?? "select";
     this._style = options.initialStyle ?? { ...DEFAULT_SHAPE_STYLE };
     this._readOnly = options.readOnly ?? false;
+    this._enablePing = options.enablePing ?? true;
     this._selectionOptions = options.selectionOptions ?? {};
     this._mergeHighlights = options.mergeHighlights ?? true;
     this._boundsPolicy = options.boundsPolicy ?? "constrain";
 
     const scale = options.scale ?? 1;
     this._scale = scale;
+
+    // readOnly is selection-only — keep pointer/keyboard attached for select.
+    if (this._readOnly && this._tool !== "select") {
+      this._tool = "select";
+    }
 
     // Create drawing controllers
     this._controllers = {
@@ -218,6 +234,7 @@ export class Doodl {
         getPreviewShape: () => this._previewShape,
         getEditState: () => this._getEditState(),
         getPingEffects: () => this._getActivePingEffects(),
+        isReadOnly: () => this._readOnly,
       },
       {
         backgroundColor: options.backgroundColor ?? "transparent",
@@ -227,7 +244,7 @@ export class Doodl {
       }
     );
 
-    // Create mouse driver
+    // Create mouse driver (always enabled — readOnly gates mutations, not select)
     this._mouseDriver = new MouseDriver(
       canvas,
       {
@@ -237,10 +254,10 @@ export class Doodl {
         onDblClick: this._handleDblClick.bind(this),
         onHover: this._handleMouseHover.bind(this),
       },
-      { scale, disabled: this._readOnly, clamp: options.clampInput ?? true }
+      { scale, disabled: false, clamp: options.clampInput ?? true }
     );
 
-    // Create keyboard driver
+    // Create keyboard driver (Escape still useful in readOnly; mutations gated)
     this._keyboardDriver = new KeyboardDriver(
       {
         onCommand: this._handleKeyboardCommand.bind(this),
@@ -248,7 +265,7 @@ export class Doodl {
           this._modifiers = modifiers;
         },
       },
-      { disabled: this._readOnly }
+      { disabled: false }
     );
 
     // Create history driver
@@ -542,6 +559,14 @@ export class Doodl {
   }
 
   private _applyAction(action: ControllerAction<DrawShape>): void {
+    // Selection-only: allow selection changes, ignore draw/transform mutations
+    if (this._readOnly) {
+      if (action.setSelection) {
+        this._setSelection(action.setSelection);
+      }
+      return;
+    }
+
     // Use LOGICAL bounds (not pixel bounds) for shape enforcement
     // Shapes are stored in logical coordinates, so bounds must match
     const canvasBounds = {
@@ -625,8 +650,10 @@ export class Doodl {
 
   private _handleMouseStart(point: Point, modifiers: DrawModifiers): void {
     this._modifiers = modifiers;
-    const config = TOOL_CONFIGS[this._tool];
-    const controller = this._controllers[this._tool];
+    // readOnly: only the select tool may handle pointer input
+    const tool = this._readOnly ? "select" : this._tool;
+    const config = TOOL_CONFIGS[tool];
+    const controller = this._controllers[tool];
     if (!controller) return; // Tool not supported
     const style = config?.styleOverride ?? this._style;
     const context = this._getControllerContext();
@@ -709,12 +736,17 @@ export class Doodl {
   private _handleKeyboardCommand(command: KeyboardCommand): void {
     switch (command) {
       case "undo":
-        this.undo();
+        if (!this._readOnly) {
+          this.undo();
+        }
         break;
       case "redo":
-        this.redo();
+        if (!this._readOnly) {
+          this.redo();
+        }
         break;
       case "delete":
+        if (this._readOnly) return;
         // First try controller's onKeyDown (e.g., vertex deletion)
         if (this._delegateKeyToController("Delete")) {
           return;
@@ -1082,6 +1114,7 @@ export class Doodl {
 
   /** Delete selected shapes */
   deleteSelected(): void {
+    if (this._readOnly) return;
     if (this._selectedIds.size === 0) return;
 
     // Mark selected shapes as dirty before removal and remove from spatial index
@@ -1115,6 +1148,7 @@ export class Doodl {
 
   /** Undo last action */
   undo(): boolean {
+    if (this._readOnly) return false;
     const previous = this._historyDriver.undo(this._createSnapshot());
     if (!previous) return false;
 
@@ -1140,6 +1174,7 @@ export class Doodl {
 
   /** Redo last undone action */
   redo(): boolean {
+    if (this._readOnly) return false;
     const next = this._historyDriver.redo(this._createSnapshot());
     if (!next) return false;
 
@@ -1198,10 +1233,14 @@ export class Doodl {
 
   /**
    * Show a brief visual ping over a shape (expanding ring + glow).
+   * Activation-frame animation used on locate/select flash.
    * Multiple pings on different shapes can coexist.
    * Re-pinging the same shape restarts its animation.
+   * No-op when `enablePing` is false.
    */
   ping(shapeId: string, options?: PingOptions): void {
+    if (!this._enablePing) return;
+
     const shape = this._shapes.find((s) => s.id === shapeId);
     if (!shape) return;
 
@@ -1214,6 +1253,21 @@ export class Doodl {
 
     this._forceFullRedraw();
     this._requestRender();
+  }
+
+  /** Whether activation-frame `ping()` animation is enabled */
+  isPingEnabled(): boolean {
+    return this._enablePing;
+  }
+
+  /** Enable/disable activation-frame `ping()` animation */
+  setEnablePing(enablePing: boolean): void {
+    this._enablePing = enablePing;
+    if (!enablePing) {
+      this._pingEffects.clear();
+      this._forceFullRedraw();
+      this._requestRender();
+    }
   }
 
   /**
@@ -1247,12 +1301,14 @@ export class Doodl {
 
   /** Set current tool */
   setTool(tool: DrawTool): void {
-    if (tool === this._tool) return;
+    // readOnly locks the tool to select (selection-only)
+    const nextTool = this._readOnly ? "select" : tool;
+    if (nextTool === this._tool) return;
     this._cancelCurrentOperation();
-    this._tool = tool;
+    this._tool = nextTool;
     this._hoveredShapeId = null;
     this._forceFullRedraw();
-    this._emit("toolChange", tool);
+    this._emit("toolChange", nextTool);
     this._updateCursor();
     this._updateSelectionDriver();
   }
@@ -1357,15 +1413,27 @@ export class Doodl {
     this._renderDriver.setBackgroundColor(color);
   }
 
-  /** Set read-only mode */
+  /**
+   * Selection-only mode: keep pointer selection, block draw/edit/drag/resize.
+   */
   setReadOnly(readOnly: boolean): void {
+    if (this._readOnly === readOnly) return;
     this._readOnly = readOnly;
-    this._mouseDriver.setDisabled(readOnly);
-    this._keyboardDriver.setDisabled(readOnly);
-    this._updateSelectionDriver();
-    if (readOnly) {
-      this._cancelCurrentOperation();
+    // Keep drivers enabled so click-to-select still works
+    this._mouseDriver.setDisabled(false);
+    this._keyboardDriver.setDisabled(false);
+    this._cancelCurrentOperation();
+    if (readOnly && this._tool !== "select") {
+      this.setTool("select");
     }
+    this._updateSelectionDriver();
+    this._forceFullRedraw();
+    this._requestRender();
+  }
+
+  /** Whether selection-only (readOnly) mode is active */
+  isReadOnly(): boolean {
+    return this._readOnly;
   }
 
   /** Force re-render */

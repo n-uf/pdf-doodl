@@ -478,7 +478,12 @@ function renderDefaultSelection<T extends DrawShape>(
   ctx.setLineDash([4, 4]);
   ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
 
-  // Resize handles
+  // Resize handles only when editable
+  if (!isEditable(shape.behavior)) {
+    ctx.restore();
+    return;
+  }
+
   ctx.setLineDash([]);
   const handleSize = 8;
   const halfHandle = handleSize / 2;

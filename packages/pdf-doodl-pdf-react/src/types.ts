@@ -81,8 +81,16 @@ export interface PdfAnnotationBaseProps {
   style?: ShapeStyle;
   /** Whether annotations are enabled (default: true) */
   annotationsEnabled?: boolean;
-  /** Read-only mode - view but not edit annotations */
+  /**
+   * Selection-only mode (default: false).
+   * Disables draw/edit/drag/resize; pointer selection still works.
+   */
   readOnly?: boolean;
+  /**
+   * Allow activation-frame `ping()` animation (default: true).
+   * When false, `ping()` is a no-op.
+   */
+  enablePing?: boolean;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
 }

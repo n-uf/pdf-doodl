@@ -66,8 +66,18 @@ export interface PageAnnotationLayerProps {
   tool?: DrawTool;
   /** Current style */
   style?: ShapeStyle;
-  /** Whether the layer is enabled */
+  /** Whether the layer is enabled (mounts canvas; default: true) */
   enabled?: boolean;
+  /**
+   * Selection-only mode (default: false).
+   * Disables draw/edit/drag/resize; pointer selection still works.
+   */
+  readOnly?: boolean;
+  /**
+   * Allow activation-frame `ping()` animation (default: true).
+   * When false, `ping()` is a no-op.
+   */
+  enablePing?: boolean;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
   /** Use canvas pool for reuse (default: true) */
@@ -94,6 +104,8 @@ export const PageAnnotationLayer: React.FC<PageAnnotationLayerProps> = ({
   tool = "select",
   style,
   enabled = true,
+  readOnly = false,
+  enablePing = true,
   mergeHighlights = true,
   usePool = true,
   onShapesChange,
@@ -191,6 +203,8 @@ export const PageAnnotationLayer: React.FC<PageAnnotationLayerProps> = ({
       initialTool: tool,
       initialStyle: style,
       mergeHighlights,
+      readOnly,
+      enablePing,
     });
 
     // Event listeners - use stable wrappers that call through refs
@@ -267,6 +281,16 @@ export const PageAnnotationLayer: React.FC<PageAnnotationLayerProps> = ({
   useEffect(() => {
     controllerRef.current?.setTool(tool);
   }, [tool]);
+
+  // Sync readOnly (selection-only)
+  useEffect(() => {
+    controllerRef.current?.setReadOnly(readOnly);
+  }, [readOnly]);
+
+  // Sync enablePing (activation-frame animation)
+  useEffect(() => {
+    controllerRef.current?.setEnablePing(enablePing);
+  }, [enablePing]);
 
   // Sync style
   useEffect(() => {

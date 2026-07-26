@@ -54,8 +54,10 @@ export interface PdfAnnotationViewerProps {
   style?: ShapeStyle;
   /** Whether annotations are enabled (default: true) */
   annotationsEnabled?: boolean;
-  /** Read-only mode */
+  /** Selection-only mode (draw/edit disabled; select still works) */
   readOnly?: boolean;
+  /** Allow activation-frame `ping()` animation (default: true) */
+  enablePing?: boolean;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
   /** Callback when PDF loads */
@@ -107,6 +109,7 @@ interface ScrollModePageProps {
   shapes: DrawShape[];
   annotationsEnabled: boolean;
   readOnly: boolean;
+  enablePing: boolean;
   mergeHighlights: boolean;
   onShapesChange: (shapes: DrawShape[]) => void;
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
@@ -122,6 +125,7 @@ const ScrollModePage: React.FC<ScrollModePageProps> = ({
   shapes,
   annotationsEnabled,
   readOnly,
+  enablePing,
   mergeHighlights,
   onShapesChange,
   onHistoryChange,
@@ -138,6 +142,7 @@ const ScrollModePage: React.FC<ScrollModePageProps> = ({
         shapes={shapes}
         annotationsEnabled={annotationsEnabled}
         readOnly={readOnly}
+        enablePing={enablePing}
         mergeHighlights={mergeHighlights}
         onShapesChange={onShapesChange}
         onHistoryChange={onHistoryChange}
@@ -186,6 +191,7 @@ export const PdfAnnotationViewer = React.forwardRef<
       style,
       annotationsEnabled = true,
       readOnly = false,
+      enablePing = true,
       mergeHighlights = true,
       onPdfLoad,
       onPdfError,
@@ -401,6 +407,7 @@ export const PdfAnnotationViewer = React.forwardRef<
                   shapes={effectiveAnnotations.get(pageNum) ?? []}
                   annotationsEnabled={annotationsEnabled}
                   readOnly={readOnly}
+                  enablePing={enablePing}
                   mergeHighlights={mergeHighlights}
                   onShapesChange={(shapes) =>
                     handleShapesChangeForPage(pageNum, shapes)
@@ -429,6 +436,7 @@ export const PdfAnnotationViewer = React.forwardRef<
               shapes={currentPageShapes}
               annotationsEnabled={annotationsEnabled}
               readOnly={readOnly}
+              enablePing={enablePing}
               mergeHighlights={mergeHighlights}
               onShapesChange={handleShapesChange}
               onHistoryChange={onHistoryChange}

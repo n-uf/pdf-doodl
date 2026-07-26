@@ -16,7 +16,7 @@ import type {
   ControllerContext,
   DrawingController,
 } from "../common/controllers";
-import { getShapeBounds } from "../common/dispatch";
+import { getShapeBounds, isShapeEditable } from "../common/dispatch";
 import type { DrawShape } from "../common/registry";
 import { mergeBounds } from "../common/utils/geometry";
 import type { PolygonShape } from "../polygon/types";
@@ -126,10 +126,11 @@ export class SelectController implements DrawingController<DrawShape> {
       }
     }
 
-    // Priority 1: Check resize handles on current selection
+    // Priority 1: Check resize handles on current selection (editable only)
     if (
       context.selectedIds.length > 0 &&
-      this._state.mode !== "vertex-editing"
+      this._state.mode !== "vertex-editing" &&
+      this._selectionIsEditable(context)
     ) {
       const bounds = this._getSelectionBounds(context);
       if (bounds) {
@@ -172,7 +173,10 @@ export class SelectController implements DrawingController<DrawShape> {
       return { setSelection: [hitId] };
     }
 
-    // Click on already selected: begin move
+    // Click on already selected: begin move only when editable
+    if (hitShape === null || !isShapeEditable(hitShape)) {
+      return NO_ACTION;
+    }
     return this._beginTransform("translate", point, null, context);
   }
 
@@ -261,7 +265,7 @@ export class SelectController implements DrawingController<DrawShape> {
 
     // Check if we clicked on a polygon
     const hitShape = context.findShapeAtPoint(point);
-    if (hitShape && isVertexEditable(hitShape)) {
+    if (hitShape && isShapeEditable(hitShape) && isVertexEditable(hitShape)) {
       // Enter vertex edit mode
       this._state = {
         mode: "vertex-editing",
@@ -586,6 +590,20 @@ export class SelectController implements DrawingController<DrawShape> {
     }
 
     return allBounds.length > 0 ? mergeBounds(allBounds) : null;
+  }
+
+  /** True when every selected shape allows drag/resize */
+  private _selectionIsEditable(
+    context: ControllerContext<DrawShape>
+  ): boolean {
+    if (context.selectedIds.length === 0) return false;
+    for (const id of context.selectedIds) {
+      const shape = context.getShape(id);
+      if (shape === undefined || !isShapeEditable(shape)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // ===========================================================================

@@ -44,8 +44,16 @@ export interface PdfAnnotationPageProps {
   style?: ShapeStyle;
   /** Whether annotations are enabled (default: true) */
   annotationsEnabled?: boolean;
-  /** Read-only mode */
+  /**
+   * Selection-only mode (default: false).
+   * Disables draw/edit/drag/resize; pointer selection still works.
+   */
   readOnly?: boolean;
+  /**
+   * Allow activation-frame `ping()` animation (default: true).
+   * When false, `ping()` is a no-op (locate/select still work).
+   */
+  enablePing?: boolean;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
   /** Callback when shapes change */
@@ -98,6 +106,7 @@ export const PdfAnnotationPage: React.FC<PdfAnnotationPageProps> = ({
   style,
   annotationsEnabled = true,
   readOnly = false,
+  enablePing = true,
   mergeHighlights = true,
   onShapesChange,
   onHistoryChange,
@@ -183,7 +192,9 @@ export const PdfAnnotationPage: React.FC<PdfAnnotationPageProps> = ({
           tool={tool}
           style={style}
           shapes={shapes}
-          enabled={!readOnly}
+          enabled
+          readOnly={readOnly}
+          enablePing={enablePing}
           mergeHighlights={mergeHighlights}
           onShapesChange={onShapesChange}
           onHistoryChange={onHistoryChange}
