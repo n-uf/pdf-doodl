@@ -84,7 +84,7 @@ export const FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_STYLE: CSSProperties = {
  * Flex + fixed height keeps the clear glyph vertically centered in the field.
  */
 export const FIND_BAR_INPUT_WRAP_CLASS =
-  "relative flex h-7 min-w-0 flex-1 items-center";
+  "relative flex h-7 w-[11rem] max-w-[14rem] shrink-0 items-center";
 
 /** Right padding so typed text does not sit under the clear control. */
 export const FIND_BAR_INPUT_WITH_CLEAR_CLASS = "w-full h-full pr-7";
