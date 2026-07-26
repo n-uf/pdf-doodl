@@ -74,8 +74,8 @@ export const FIND_BAR_CLEAR_BUTTON_CLASS =
   "absolute right-0.5 top-0 bottom-0 z-10 my-auto inline-flex h-5 w-5 items-center justify-center rounded-md text-current/55 hover:bg-current/10 hover:text-current";
 
 /**
- * Fixed slot for match count (`999/999` / `0/0` / `…`). Always reserve this
- * width so the find strip does not shift when the count appears or grows.
+ * Match count (`999/999` / `0/0` / `…`). Fixed width when visible; hidden
+ * when there is no query so the strip stays packed (input · ↑↓ · Aa).
  */
 export const FIND_BAR_MATCH_COUNT_CLASS =
   "inline-flex h-7 w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums text-center";
@@ -400,13 +400,13 @@ export function FindBar(props: FindBarProps): ReactElement {
           </button>
         ) : null}
       </div>
-      {showMatchCount ? (
+      {showMatchCount && countLabel !== "" ? (
         <span
           style={FIND_BAR_MATCH_COUNT_STYLE}
           className={countClass}
           aria-live="polite"
         >
-          {countLabel !== "" ? countLabel : "\u00a0"}
+          {countLabel}
         </span>
       ) : null}
       <button
