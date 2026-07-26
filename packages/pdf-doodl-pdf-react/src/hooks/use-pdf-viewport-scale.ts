@@ -17,6 +17,11 @@
  */
 
 import { useCallback, useState } from "react";
+import {
+  computeFitHeightScale,
+  computeFitPageScale,
+  computeFitWidthScale,
+} from "./fit-scale";
 
 // =============================================================================
 // TYPES
@@ -129,17 +134,27 @@ export function usePdfViewportScale(
     setScaleState(clamp(1));
   }, [clamp]);
 
-  /** Available viewport size: measured container, else window, minus padding. */
+  /**
+   * Available viewport size: content box of `containerRef` (clientWidth/Height
+   * minus CSS padding), else window, minus optional extra `padding`.
+   * Width and height are never swapped.
+   */
   const measureAvailableSize = useCallback((): PdfPageSize | null => {
     const paddingWidth = padding?.width ?? 0;
     const paddingHeight = padding?.height ?? 0;
 
     const container = containerRef?.current;
     if (container) {
-      const rect = container.getBoundingClientRect();
+      const style = getComputedStyle(container);
+      const padX =
+        (Number.parseFloat(style.paddingLeft) || 0) +
+        (Number.parseFloat(style.paddingRight) || 0);
+      const padY =
+        (Number.parseFloat(style.paddingTop) || 0) +
+        (Number.parseFloat(style.paddingBottom) || 0);
       return {
-        width: rect.width - paddingWidth,
-        height: rect.height - paddingHeight,
+        width: container.clientWidth - padX - paddingWidth,
+        height: container.clientHeight - padY - paddingHeight,
       };
     }
 
@@ -154,23 +169,34 @@ export function usePdfViewportScale(
     if (!pageSize) return;
     const available = measureAvailableSize();
     if (!available || available.width <= 0) return;
-    setScaleState(clamp(available.width / pageSize.width));
+    setScaleState(
+      clamp(computeFitWidthScale(available.width, pageSize.width)),
+    );
   }, [pageSize, measureAvailableSize, clamp]);
 
   const fitHeight = useCallback(() => {
     if (!pageSize) return;
     const available = measureAvailableSize();
     if (!available || available.height <= 0) return;
-    setScaleState(clamp(available.height / pageSize.height));
+    setScaleState(
+      clamp(computeFitHeightScale(available.height, pageSize.height)),
+    );
   }, [pageSize, measureAvailableSize, clamp]);
 
   const fitPage = useCallback(() => {
     if (!pageSize) return;
     const available = measureAvailableSize();
     if (!available || available.width <= 0 || available.height <= 0) return;
-    const scaleX = available.width / pageSize.width;
-    const scaleY = available.height / pageSize.height;
-    setScaleState(clamp(Math.min(scaleX, scaleY)));
+    setScaleState(
+      clamp(
+        computeFitPageScale(
+          available.width,
+          available.height,
+          pageSize.width,
+          pageSize.height,
+        ),
+      ),
+    );
   }, [pageSize, measureAvailableSize, clamp]);
 
   return {

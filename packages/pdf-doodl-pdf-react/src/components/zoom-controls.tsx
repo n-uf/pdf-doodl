@@ -8,8 +8,8 @@
  * `usePdfViewportScale` / `useCyclingFitMode` directly instead — this
  * component exists so simple integrations don't have to hand-roll buttons.
  *
- * Fit is a single cycling control: width → height → page → width. Each click
- * applies the displayed mode and advances the label to the next.
+ * Fit is a single cycling control: width → height → page → width. The label
+ * shows the last applied mode; each click applies the next and updates it.
  */
 
 import type { ReactElement } from "react";
@@ -21,6 +21,7 @@ import {
   PDF_ZOOM_PERCENT_BUTTON_STYLE,
   PDF_ZOOM_STEP_BUTTON_CLASS,
   PDF_ZOOM_STEP_BUTTON_STYLE,
+  fitCycleTitleFromReturn,
   useCyclingFitMode,
   type PdfFitMode,
 } from "../hooks/use-cycling-fit-mode";
@@ -53,9 +54,11 @@ export function ZoomControls({
   initialFitMode = "width",
 }: ZoomControlsProps): ReactElement {
   const { scale, zoomIn, zoomOut, resetZoom, atMinZoom, atMaxZoom } = viewport;
-  const { descriptor, canFit, cycleFit } = useCyclingFitMode(viewport, {
+  const fit = useCyclingFitMode(viewport, {
     initialMode: initialFitMode,
   });
+  const { descriptor, canFit, cycleFit } = fit;
+  const fitTitle = fitCycleTitleFromReturn(fit);
 
   const buttonClass = `${DEFAULT_BUTTON_CLASS} ${buttonClassName}`;
 
@@ -95,8 +98,8 @@ export function ZoomControls({
           type="button"
           onClick={cycleFit}
           disabled={!canFit}
-          title={`${descriptor.title} — click to cycle`}
-          aria-label={`${descriptor.title} (click to cycle fit mode)`}
+          title={fitTitle}
+          aria-label={fitTitle}
           style={PDF_FIT_CYCLE_BUTTON_STYLE}
           className={`${buttonClass} ${PDF_FIT_CYCLE_BUTTON_CLASS}`}
         >

@@ -13,6 +13,8 @@ export {
 export {
   useCyclingFitMode,
   getPdfFitModeDescriptor,
+  getPdfFitCycleTitle,
+  fitCycleTitleFromReturn,
   nextPdfFitMode,
   PDF_FIT_CYCLE_BUTTON_CLASS,
   PDF_FIT_CYCLE_BUTTON_STYLE,
@@ -29,6 +31,11 @@ export {
   type UseCyclingFitModeOptions,
   type UseCyclingFitModeReturn,
 } from "./use-cycling-fit-mode";
+export {
+  computeFitWidthScale,
+  computeFitHeightScale,
+  computeFitPageScale,
+} from "./fit-scale";
 export {
   usePdfFind,
   type FindMatchRef,

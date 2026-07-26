@@ -240,11 +240,17 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       zoomOut: handleZoomOut,
       resetZoom: handleZoomReset,
     } = pdfViewport;
+    const fitCycle = useCyclingFitMode(pdfViewport);
     const {
       descriptor: fitDescriptor,
+      nextDescriptor: fitNextDescriptor,
       canFit: canFitPdf,
       cycleFit: handleCycleFit,
-    } = useCyclingFitMode(pdfViewport);
+    } = fitCycle;
+    const fitCycleTitle =
+      fitDescriptor.mode === fitNextDescriptor.mode
+        ? `${fitDescriptor.title} — click to apply`
+        : `${fitDescriptor.title} — click for ${fitNextDescriptor.label.toLowerCase()}`;
     const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
     const [pdfTotalPages, setPdfTotalPages] = useState(0);
     const [pdfViewMode, setPdfViewMode] = useState<PdfViewMode>("exploded");
@@ -1010,7 +1016,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                   tokens={t}
                   isDark={isDark}
                   className={`mr-2 ${PDF_FIT_CYCLE_BUTTON_CLASS}`}
-                  title={`${fitDescriptor.title} — click to cycle`}
+                  title={fitCycleTitle}
                   disabled={!canFitPdf}
                 >
                   <span className={PDF_FIT_CYCLE_LABEL_CLASS}>

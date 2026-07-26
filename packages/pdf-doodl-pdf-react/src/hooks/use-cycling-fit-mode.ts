@@ -3,8 +3,10 @@
 /**
  * Cycles fit-width → fit-height → fit-page through a single control.
  *
- * The button shows the mode that the next click will apply; on click it
- * applies that fit and advances the label to the following mode.
+ * The button shows the **last applied** fit mode (current page fit). On click
+ * it applies the *next* mode in the cycle and updates the label to match —
+ * so the label always agrees with the scale on screen (avoids reading
+ * “height” while the page is still width-fitted).
  */
 
 import { useCallback, useState, type CSSProperties } from "react";
@@ -132,23 +134,60 @@ export function nextPdfFitMode(mode: PdfFitMode): PdfFitMode {
   return PDF_FIT_MODE_ORDER[nextIndex] ?? "width";
 }
 
+/** Tooltip / aria for the fit-cycle control (label = current, click → next). */
+export function getPdfFitCycleTitle(
+  current: PdfFitModeDescriptor,
+  next: PdfFitModeDescriptor,
+): string {
+  if (current.mode === next.mode) {
+    return `${current.title} — click to apply`;
+  }
+  return `${current.title} — click for ${next.label.toLowerCase()}`;
+}
+
 export type CyclingFitViewport = Pick<
   UsePdfViewportScaleReturn,
   "fitWidth" | "fitHeight" | "fitPage" | "canFit"
 >;
 
 export interface UseCyclingFitModeOptions {
-  /** Mode shown (and applied) on the first click. Default: `"width"`. */
+  /**
+   * Mode applied (and shown) on the first click. Default: `"width"`.
+   * Until the first click, the control shows this as the pending fit.
+   */
   initialMode?: PdfFitMode;
 }
 
 export interface UseCyclingFitModeReturn {
-  /** Mode that the next click will apply. */
+  /**
+   * Fit mode shown on the control — last applied, or `initialMode` before
+   * the first click.
+   */
   mode: PdfFitMode;
+  /** Mode that the next `cycleFit()` will apply. */
+  nextMode: PdfFitMode;
   descriptor: PdfFitModeDescriptor;
+  nextDescriptor: PdfFitModeDescriptor;
   canFit: boolean;
-  /** Apply the currently displayed fit mode, then advance to the next. */
+  /** Apply the next fit mode in the cycle and update the label to match. */
   cycleFit: () => void;
+}
+
+function applyFitMode(
+  mode: PdfFitMode,
+  viewport: CyclingFitViewport,
+): void {
+  switch (mode) {
+    case "width":
+      viewport.fitWidth();
+      break;
+    case "height":
+      viewport.fitHeight();
+      break;
+    case "page":
+      viewport.fitPage();
+      break;
+  }
 }
 
 export function useCyclingFitMode(
@@ -156,25 +195,28 @@ export function useCyclingFitMode(
   options: UseCyclingFitModeOptions = {},
 ): UseCyclingFitModeReturn {
   const { initialMode = "width" } = options;
-  const [mode, setMode] = useState<PdfFitMode>(initialMode);
+  const [lastApplied, setLastApplied] = useState<PdfFitMode | null>(null);
   const { fitWidth, fitHeight, fitPage, canFit } = viewport;
 
+  const mode = lastApplied ?? initialMode;
+  const nextMode =
+    lastApplied === null ? initialMode : nextPdfFitMode(lastApplied);
   const descriptor = getPdfFitModeDescriptor(mode);
+  const nextDescriptor = getPdfFitModeDescriptor(nextMode);
 
   const cycleFit = useCallback(() => {
-    switch (mode) {
-      case "width":
-        fitWidth();
-        break;
-      case "height":
-        fitHeight();
-        break;
-      case "page":
-        fitPage();
-        break;
-    }
-    setMode(nextPdfFitMode(mode));
-  }, [mode, fitWidth, fitHeight, fitPage]);
+    const toApply =
+      lastApplied === null ? initialMode : nextPdfFitMode(lastApplied);
+    applyFitMode(toApply, { fitWidth, fitHeight, fitPage, canFit });
+    setLastApplied(toApply);
+  }, [lastApplied, initialMode, fitWidth, fitHeight, fitPage, canFit]);
 
-  return { mode, descriptor, canFit, cycleFit };
+  return { mode, nextMode, descriptor, nextDescriptor, canFit, cycleFit };
+}
+
+/** Convenience title from a {@link UseCyclingFitModeReturn}. */
+export function fitCycleTitleFromReturn(
+  fit: Pick<UseCyclingFitModeReturn, "descriptor" | "nextDescriptor">,
+): string {
+  return getPdfFitCycleTitle(fit.descriptor, fit.nextDescriptor);
 }
