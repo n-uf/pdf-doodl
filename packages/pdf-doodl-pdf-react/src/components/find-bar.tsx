@@ -32,6 +32,20 @@ export interface FindBarProps {
 const DEFAULT_BUTTON_CLASS =
   "px-2 py-1 text-xs border border-current/20 rounded-sm hover:bg-current/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
 
+/**
+ * Fixed slot for match count (`999/999` / `0/0` / `…`). Always reserve this
+ * width so the find strip does not shift when the count appears or grows.
+ */
+export const FIND_BAR_MATCH_COUNT_CLASS =
+  "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums text-center";
+
+/**
+ * Fixed square for the case-sensitive (Aa) toggle so `font-semibold` on press
+ * cannot expand the control.
+ */
+export const FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_CLASS =
+  "inline-flex w-[2.25rem] shrink-0 items-center justify-center";
+
 /** Muted off-state styling for the case-sensitive (Aa) toggle. */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS =
   "text-current/40 bg-transparent border-current/15";
@@ -40,8 +54,8 @@ export const FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS =
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS =
   "aria-pressed:text-current aria-pressed:border-current/55 aria-pressed:bg-current/18 aria-pressed:font-semibold";
 
-/** Full off/on styling — pair with a base button class. */
-export const FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS = `${FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS}`;
+/** Full size + off/on styling — pair with a base button class. */
+export const FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS = `${FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_CLASS} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS}`;
 
 /** Accent-token override for on-state when the host app defines accent colors. */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ACCENT_ON_CLASS =
@@ -114,11 +128,12 @@ export function FindBar({
         placeholder={placeholder}
         className={`px-2 py-1 text-xs border border-current/20 rounded-sm bg-transparent focus:outline-none ${inputClassName}`}
       />
-      {countLabel !== "" && (
-        <span className="min-w-[3rem] text-center text-xs opacity-70">
-          {countLabel}
-        </span>
-      )}
+      <span
+        className={`${FIND_BAR_MATCH_COUNT_CLASS} text-xs opacity-70`}
+        aria-live="polite"
+      >
+        {countLabel !== "" ? countLabel : "\u00a0"}
+      </span>
       <button
         type="button"
         onClick={prev}

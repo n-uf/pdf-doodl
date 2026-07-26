@@ -69,12 +69,14 @@ export type {
   UsePdfFindReturn,
 } from "./hooks";
 
-// FindBar toggle class tokens (SSR-safe strings)
+// FindBar class tokens (SSR-safe strings)
 export {
   FIND_BAR_CASE_SENSITIVE_TOGGLE_ACCENT_ON_CLASS,
   FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS,
   FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS,
   FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS,
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_CLASS,
+  FIND_BAR_MATCH_COUNT_CLASS,
 } from "./components/find-bar";
 
 // Component types only (not the implementations)
