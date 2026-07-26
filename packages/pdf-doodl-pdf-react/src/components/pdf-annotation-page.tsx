@@ -11,6 +11,7 @@
 
 import {
   registerBuiltinShapes,
+  type ActivationAnimationType,
   type DrawShape,
   type DrawTool,
   type ShapeStyle,
@@ -54,6 +55,11 @@ export interface PdfAnnotationPageProps {
    * When false, `ping()` is a no-op (locate/select still work).
    */
   enablePing?: boolean;
+  /**
+   * Default `ping()` animation when `type` is omitted (default: `"ping"`).
+   * Built-ins: `"ping"` | `"locateFlash"` | `"pulse"`.
+   */
+  defaultActivationAnimation?: ActivationAnimationType;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
   /** Callback when shapes change */
@@ -107,6 +113,7 @@ export const PdfAnnotationPage: React.FC<PdfAnnotationPageProps> = ({
   annotationsEnabled = true,
   readOnly = false,
   enablePing = true,
+  defaultActivationAnimation = "ping",
   mergeHighlights = true,
   onShapesChange,
   onHistoryChange,
@@ -195,6 +202,7 @@ export const PdfAnnotationPage: React.FC<PdfAnnotationPageProps> = ({
           enabled
           readOnly={readOnly}
           enablePing={enablePing}
+          defaultActivationAnimation={defaultActivationAnimation}
           mergeHighlights={mergeHighlights}
           onShapesChange={onShapesChange}
           onHistoryChange={onHistoryChange}

@@ -82,6 +82,7 @@ export function useDoodl(options: UseDoodlOptions = {}): UseDoodlReturn {
     scale,
     readOnly,
     enablePing,
+    defaultActivationAnimation,
     selectionOptions,
     clampInput,
     boundsPolicy,
@@ -145,6 +146,7 @@ export function useDoodl(options: UseDoodlOptions = {}): UseDoodlReturn {
       scale,
       readOnly,
       enablePing,
+      defaultActivationAnimation,
       textLayer: textLayerRef.current ?? undefined,
       selectionOptions,
       clampInput,
@@ -217,6 +219,15 @@ export function useDoodl(options: UseDoodlOptions = {}): UseDoodlReturn {
       doodlRef.current?.setEnablePing(enablePing);
     }
   }, [enablePing]);
+
+  // Sync defaultActivationAnimation
+  useEffect(() => {
+    if (defaultActivationAnimation !== undefined) {
+      doodlRef.current?.setDefaultActivationAnimation(
+        defaultActivationAnimation,
+      );
+    }
+  }, [defaultActivationAnimation]);
 
   // Sync text layer
   useEffect(() => {

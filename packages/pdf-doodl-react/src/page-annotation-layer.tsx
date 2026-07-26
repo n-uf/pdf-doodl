@@ -17,6 +17,7 @@ import {
   getShapeCreationBehavior,
   getToolTargetShape,
   registerBuiltinShapes,
+  type ActivationAnimationType,
   type DrawShape,
   type DrawTool,
   type ShapeStyle,
@@ -78,6 +79,10 @@ export interface PageAnnotationLayerProps {
    * When false, `ping()` is a no-op.
    */
   enablePing?: boolean;
+  /**
+   * Default `ping()` animation when `type` is omitted (default: `"ping"`).
+   */
+  defaultActivationAnimation?: ActivationAnimationType;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
   /** Use canvas pool for reuse (default: true) */
@@ -106,6 +111,7 @@ export const PageAnnotationLayer: React.FC<PageAnnotationLayerProps> = ({
   enabled = true,
   readOnly = false,
   enablePing = true,
+  defaultActivationAnimation = "ping",
   mergeHighlights = true,
   usePool = true,
   onShapesChange,
@@ -205,6 +211,7 @@ export const PageAnnotationLayer: React.FC<PageAnnotationLayerProps> = ({
       mergeHighlights,
       readOnly,
       enablePing,
+      defaultActivationAnimation,
     });
 
     // Event listeners - use stable wrappers that call through refs
@@ -291,6 +298,13 @@ export const PageAnnotationLayer: React.FC<PageAnnotationLayerProps> = ({
   useEffect(() => {
     controllerRef.current?.setEnablePing(enablePing);
   }, [enablePing]);
+
+  // Sync default activation animation preset
+  useEffect(() => {
+    controllerRef.current?.setDefaultActivationAnimation(
+      defaultActivationAnimation,
+    );
+  }, [defaultActivationAnimation]);
 
   // Sync style
   useEffect(() => {

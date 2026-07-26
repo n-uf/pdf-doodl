@@ -20,6 +20,24 @@ import {
   SpatialIndex,
 } from "./drivers";
 import {
+  defaultColorForAnimation,
+  defaultDurationForAnimation,
+} from "./effects/activation-animation";
+import type { ActivationAnimationType } from "./effects/activation-animation";
+
+export type {
+  ActivationAnimationFrame,
+  ActivationAnimationRenderer,
+  ActivationAnimationType,
+  BuiltinActivationAnimation,
+} from "./effects/activation-animation";
+export {
+  defaultColorForAnimation,
+  defaultDurationForAnimation,
+  getActivationAnimationRenderer,
+  registerActivationAnimation,
+} from "./effects/activation-animation";
+import {
   createHighlightController,
   createSelectController,
   createTextController,
@@ -91,6 +109,12 @@ export interface DoodlOptions {
    * When false, `ping()` is a no-op (locate/select still work).
    */
   enablePing?: boolean;
+  /**
+   * Default activation animation when `ping()` omits `type` (default: `"ping"`).
+   * Built-ins: `"ping"` | `"locateFlash"` | `"pulse"`. Custom names via
+   * `registerActivationAnimation()`.
+   */
+  defaultActivationAnimation?: ActivationAnimationType;
   /** Text layer element for text-highlight tool (optional) */
   textLayer?: HTMLElement;
   /** Selection driver options */
@@ -129,9 +153,17 @@ export interface DoodlEvents {
 }
 
 export interface PingOptions {
-  /** Duration in milliseconds (default: 1200) */
+  /**
+   * Animation preset (default: doodl `defaultActivationAnimation`, else `"ping"`).
+   * - `"ping"`: border-trace comet (historical default)
+   * - `"locateFlash"`: expanding box-shadow flash (console pre-doodl locate)
+   * - `"pulse"`: soft expanding outline
+   * Custom ids work after `registerActivationAnimation(name, renderer)`.
+   */
+  type?: ActivationAnimationType;
+  /** Duration in milliseconds (default depends on `type`) */
   duration?: number;
-  /** RGB color tuple (default: [59, 130, 246] — blue) */
+  /** RGB color tuple (default depends on `type`) */
   color?: [number, number, number];
 }
 
@@ -177,6 +209,7 @@ export class Doodl {
   // Options
   private _readOnly: boolean;
   private _enablePing: boolean;
+  private _defaultActivationAnimation: ActivationAnimationType;
   private _scale: number;
   private _selectionOptions: Omit<SelectionDriverOptions, "scale">;
   private _mergeHighlights: boolean;
@@ -197,6 +230,8 @@ export class Doodl {
     this._style = options.initialStyle ?? { ...DEFAULT_SHAPE_STYLE };
     this._readOnly = options.readOnly ?? false;
     this._enablePing = options.enablePing ?? true;
+    this._defaultActivationAnimation =
+      options.defaultActivationAnimation ?? "ping";
     this._selectionOptions = options.selectionOptions ?? {};
     this._mergeHighlights = options.mergeHighlights ?? true;
     this._boundsPolicy = options.boundsPolicy ?? "constrain";
@@ -1232,9 +1267,10 @@ export class Doodl {
   // ===========================================================================
 
   /**
-   * Show a brief visual ping over a shape (expanding ring + glow).
-   * Activation-frame animation used on locate/select flash.
-   * Multiple pings on different shapes can coexist.
+   * Show a brief activation-frame animation over a shape.
+   * Default type is border-trace `"ping"`; pass `type: "locateFlash"` (etc.)
+   * or set `defaultActivationAnimation` for other presets.
+   * Multiple effects on different shapes can coexist.
    * Re-pinging the same shape restarts its animation.
    * No-op when `enablePing` is false.
    */
@@ -1244,11 +1280,14 @@ export class Doodl {
     const shape = this._shapes.find((s) => s.id === shapeId);
     if (!shape) return;
 
+    const type =
+      options?.type ?? this._defaultActivationAnimation;
     this._pingEffects.set(shapeId, {
       shapeId,
       startTime: performance.now(),
-      duration: options?.duration ?? 1200,
-      color: options?.color ?? [59, 130, 246],
+      duration: options?.duration ?? defaultDurationForAnimation(type),
+      color: options?.color ?? defaultColorForAnimation(type),
+      type,
     });
 
     this._forceFullRedraw();
@@ -1268,6 +1307,15 @@ export class Doodl {
       this._forceFullRedraw();
       this._requestRender();
     }
+  }
+
+  /** Default animation type used when `ping()` omits `type` */
+  getDefaultActivationAnimation(): ActivationAnimationType {
+    return this._defaultActivationAnimation;
+  }
+
+  setDefaultActivationAnimation(type: ActivationAnimationType): void {
+    this._defaultActivationAnimation = type;
   }
 
   /**

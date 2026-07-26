@@ -88,5 +88,20 @@ export * from "./drivers";
 // DOODL (main API)
 // =============================================================================
 
-export { createDoodl, Doodl } from "./doodl";
-export type { DoodlEvents, DoodlOptions, PingOptions } from "./doodl";
+export {
+  createDoodl,
+  Doodl,
+  defaultColorForAnimation,
+  defaultDurationForAnimation,
+  getActivationAnimationRenderer,
+  registerActivationAnimation,
+} from "./doodl";
+export type {
+  ActivationAnimationFrame,
+  ActivationAnimationRenderer,
+  ActivationAnimationType,
+  BuiltinActivationAnimation,
+  DoodlEvents,
+  DoodlOptions,
+  PingOptions,
+} from "./doodl";

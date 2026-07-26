@@ -403,5 +403,20 @@ export {
 // DOODL (main API)
 // =============================================================================
 
-export { Doodl, createDoodl } from "./src/doodl";
-export type { DoodlEvents, DoodlOptions, PingOptions } from "./src/doodl";
+export {
+  Doodl,
+  createDoodl,
+  defaultColorForAnimation,
+  defaultDurationForAnimation,
+  getActivationAnimationRenderer,
+  registerActivationAnimation,
+} from "./src/doodl";
+export type {
+  ActivationAnimationFrame,
+  ActivationAnimationRenderer,
+  ActivationAnimationType,
+  BuiltinActivationAnimation,
+  DoodlEvents,
+  DoodlOptions,
+  PingOptions,
+} from "./src/doodl";

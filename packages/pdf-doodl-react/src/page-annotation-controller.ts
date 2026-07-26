@@ -9,6 +9,7 @@
 import {
   createDoodl,
   DEFAULT_SHAPE_STYLE,
+  type ActivationAnimationType,
   type Doodl,
   type DrawShape,
   type DrawTool,
@@ -47,6 +48,7 @@ export class PageAnnotationController {
   private _mergeHighlights: boolean;
   private _readOnly: boolean;
   private _enablePing: boolean;
+  private _defaultActivationAnimation: ActivationAnimationType;
 
   // Flag to prevent feedback loops during transform
   private _isTransforming = false;
@@ -67,6 +69,8 @@ export class PageAnnotationController {
     this._mergeHighlights = options.mergeHighlights ?? true;
     this._readOnly = options.readOnly ?? false;
     this._enablePing = options.enablePing ?? true;
+    this._defaultActivationAnimation =
+      options.defaultActivationAnimation ?? "ping";
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -102,6 +106,7 @@ export class PageAnnotationController {
       mergeHighlights: this._mergeHighlights,
       readOnly: this._readOnly,
       enablePing: this._enablePing,
+      defaultActivationAnimation: this._defaultActivationAnimation,
     });
 
     // Load existing shapes (page → canvas coords)
@@ -384,6 +389,18 @@ export class PageAnnotationController {
 
   isPingEnabled(): boolean {
     return this._doodl?.isPingEnabled() ?? this._enablePing;
+  }
+
+  setDefaultActivationAnimation(type: ActivationAnimationType): void {
+    this._defaultActivationAnimation = type;
+    this._doodl?.setDefaultActivationAnimation(type);
+  }
+
+  getDefaultActivationAnimation(): ActivationAnimationType {
+    return (
+      this._doodl?.getDefaultActivationAnimation() ??
+      this._defaultActivationAnimation
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════

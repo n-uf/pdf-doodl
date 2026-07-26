@@ -2,7 +2,12 @@
  * Types for PDF annotation functionality
  */
 
-import type { DrawShape, DrawTool, ShapeStyle } from "@n-uf/pdf-doodl";
+import type {
+  ActivationAnimationType,
+  DrawShape,
+  DrawTool,
+  ShapeStyle,
+} from "@n-uf/pdf-doodl";
 import type {
   PageAnnotationController,
   PageAnnotations as _PageAnnotations,
@@ -91,6 +96,11 @@ export interface PdfAnnotationBaseProps {
    * When false, `ping()` is a no-op.
    */
   enablePing?: boolean;
+  /**
+   * Default `ping()` animation when `type` is omitted (default: `"ping"`).
+   * Built-ins: `"ping"` | `"locateFlash"` | `"pulse"`.
+   */
+  defaultActivationAnimation?: ActivationAnimationType;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
 }

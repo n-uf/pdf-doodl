@@ -14,6 +14,8 @@
  * Edit mode and selection rendering is delegated to shape modules via dispatch.
  */
 
+import type { ActivationAnimationType } from "../effects/activation-animation";
+import { getActivationAnimationRenderer } from "../effects/activation-animation";
 import {
   clearCanvas,
   configureSharpRendering,
@@ -51,6 +53,8 @@ export interface PingEffect {
   startTime: number;
   duration: number;
   color: [number, number, number];
+  /** Animation preset (default behavior is `"ping"`). */
+  type: ActivationAnimationType;
 }
 
 /**
@@ -514,7 +518,7 @@ export class RenderDriver {
   }
 
   /**
-   * Render active ping effects (border-trace comet animation).
+   * Render active activation-frame effects (`ping` / `locateFlash` / …).
    * Returns true if any effects are still animating.
    */
   private _renderPingEffects(
@@ -538,15 +542,30 @@ export class RenderDriver {
 
       const b = getShapeBounds(shape);
       const [r, g, bb] = effect.color;
+      const type = effect.type;
 
-      const pad = 3 / sc;
-      const bx = b.x - pad;
-      const by = b.y - pad;
-      const bw = b.width + pad * 2;
-      const bh = b.height + pad * 2;
-      const per = 2 * (bw + bh);
+      // Specialized multi-pass path for the default border-trace comet.
+      if (type === "ping") {
+        const pad = 3 / sc;
+        const bx = b.x - pad;
+        const by = b.y - pad;
+        const bw = b.width + pad * 2;
+        const bh = b.height + pad * 2;
+        const per = 2 * (bw + bh);
+        this._renderBorderTrace(ctx, t, bx, by, bw, bh, per, r, g, bb, sc);
+        continue;
+      }
 
-      this._renderBorderTrace(ctx, t, bx, by, bw, bh, per, r, g, bb, sc);
+      const renderer = getActivationAnimationRenderer(type);
+      renderer(ctx, {
+        t,
+        x: b.x,
+        y: b.y,
+        width: b.width,
+        height: b.height,
+        color: effect.color,
+        scale: sc,
+      });
     }
 
     return hasActive;
