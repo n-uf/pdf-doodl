@@ -24,6 +24,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # turbo caches task outputs locally (.turbo); remote cache optional later
       - name: Build packages
         run: pnpm build:packages
 

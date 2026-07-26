@@ -6,13 +6,17 @@
   "license": "LicenseRef-PolyForm-Perimeter-1.0.1",
   "packageManager": "pnpm@10.12.1",
   "scripts": {
-    "dev": "pnpm --filter doodl-web dev",
-    "build": "pnpm -r --filter './packages/*' build && pnpm --filter doodl-web build",
-    "build:packages": "pnpm -r --filter './packages/*' build",
-    "typecheck": "pnpm -r --filter './packages/*' typecheck && pnpm --filter doodl-web typecheck",
-    "test": "pnpm -r --filter './packages/*' test",
-    "check": "pnpm typecheck && pnpm test",
+    "dev": "turbo run dev --filter=doodl-web",
+    "build": "turbo run build",
+    "build:packages": "turbo run build --filter=./packages/*",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test --filter=./packages/*",
+    "check": "turbo run typecheck test",
+    "lint": "turbo run lint",
     "release": "node ./scripts/release-workspace.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.19"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -59,12 +59,14 @@ _agent/                    Contributor architecture notes
 
 ## Dev / test / build
 
+Turborepo orchestrates workspace tasks (`turbo.json`). Package-level scripts stay the source of truth; root scripts call `turbo run …`.
+
 ```bash
 pnpm install
 pnpm dev              # apps/web showcase
 pnpm typecheck
 pnpm test
-pnpm check
+pnpm check            # typecheck + test (via turbo)
 pnpm build:packages   # tsup build for all publishable packages
 pnpm build            # packages + web
 ```

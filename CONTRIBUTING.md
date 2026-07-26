@@ -15,6 +15,8 @@ _agent/                    Contributor architecture notes
 
 ## Dev / test / build
 
+Root scripts use [Turborepo](https://turbo.build) (`turbo run …`). Package `package.json` scripts remain the tasks turbo invokes.
+
 ```bash
 pnpm install
 pnpm dev
