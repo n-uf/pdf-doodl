@@ -16,6 +16,7 @@ import type { ReactElement } from "react";
 import {
   PDF_FIT_CYCLE_BUTTON_CLASS,
   PDF_FIT_CYCLE_LABEL_CLASS,
+  PDF_ZOOM_PERCENT_BUTTON_CLASS,
   useCyclingFitMode,
   type PdfFitMode,
 } from "../hooks/use-cycling-fit-mode";
@@ -69,7 +70,7 @@ export function ZoomControls({
         type="button"
         onClick={resetZoom}
         title="Reset zoom to 100%"
-        className={`min-w-[3.5rem] text-center ${buttonClass} ${labelClassName}`}
+        className={`${PDF_ZOOM_PERCENT_BUTTON_CLASS} ${buttonClass} ${labelClassName}`}
       >
         {Math.round(scale * 100)}%
       </button>

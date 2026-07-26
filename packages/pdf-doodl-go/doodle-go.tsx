@@ -22,6 +22,7 @@ import {
   getAnnotationTextLayersByPage,
   PDF_FIT_CYCLE_BUTTON_CLASS,
   PDF_FIT_CYCLE_LABEL_CLASS,
+  PDF_ZOOM_PERCENT_BUTTON_CLASS,
   PDF_TEXT_LAYER_SELECTOR,
   useCyclingFitMode,
   usePdfFind,
@@ -989,7 +990,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                 </ToolbarButton>
                 <button
                   onClick={handleZoomReset}
-                  className={`px-2 py-1.5 text-[10px] tracking-wider border-y ${t.border} transition-colors min-w-[50px]`}
+                  className={`px-2 py-1.5 text-[10px] tracking-wider border-y ${t.border} transition-colors ${PDF_ZOOM_PERCENT_BUTTON_CLASS}`}
                   title="Reset zoom to 100%"
                 >
                   {Math.round(pdfScale * 100)}%

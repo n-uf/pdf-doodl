@@ -58,6 +58,10 @@ export const PDF_FIT_CYCLE_BUTTON_CLASS =
 export const PDF_FIT_CYCLE_LABEL_CLASS =
   "inline-flex items-center justify-center gap-0.5";
 
+/** Fixed width for zoom percent button — fits max scale (300%). */
+export const PDF_ZOOM_PERCENT_BUTTON_CLASS =
+  "inline-flex w-[4ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums";
+
 export function nextPdfFitMode(mode: PdfFitMode): PdfFitMode {
   const index = PDF_FIT_MODE_ORDER.indexOf(mode);
   const nextIndex = (index + 1) % PDF_FIT_MODE_ORDER.length;

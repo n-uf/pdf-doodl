@@ -20,6 +20,7 @@ export {
   nextPdfFitMode,
   PDF_FIT_CYCLE_BUTTON_CLASS,
   PDF_FIT_CYCLE_LABEL_CLASS,
+  PDF_ZOOM_PERCENT_BUTTON_CLASS,
   PDF_FIT_MODE_ORDER,
   usePdfFind,
 } from "./hooks";

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PDF_ZOOM_PERCENT_BUTTON_CLASS } from "@n-uf/pdf-doodl-pdf-react";
 import type { ThemeTokens } from "../tokens/themes";
 
 export interface HeaderProps {
@@ -111,7 +112,7 @@ export const ZoomControls: React.FC<ZoomControlsProps> = ({
       </button>
       <button
         onClick={onZoomReset}
-        className={`px-2 py-1.5 text-[10px] tracking-wider border-y ${t.border} transition-colors min-w-[50px]`}
+        className={`px-2 py-1.5 text-[10px] tracking-wider border-y ${t.border} transition-colors ${PDF_ZOOM_PERCENT_BUTTON_CLASS}`}
         title="Reset zoom"
       >
         {Math.round(scale * 100)}%
