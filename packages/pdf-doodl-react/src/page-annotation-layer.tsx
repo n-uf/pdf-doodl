@@ -28,14 +28,19 @@ import {
 } from "./page-annotation-controller";
 
 /**
- * Compare two shape arrays for equality by IDs
+ * Compare two shape arrays for equality (id + geometry/style payload).
+ * ID-only compare would skip style/behavior updates from controlled props.
  */
 function areShapeArraysEqual(a: DrawShape[], b: DrawShape[]): boolean {
   if (a.length !== b.length) return false;
   if (a.length === 0) return true;
 
   for (let i = 0; i < a.length; i++) {
-    if (a[i]?.id !== b[i]?.id) return false;
+    const left = a[i];
+    const right = b[i];
+    if (left === right) continue;
+    if (left?.id !== right?.id) return false;
+    if (JSON.stringify(left) !== JSON.stringify(right)) return false;
   }
   return true;
 }

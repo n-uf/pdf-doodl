@@ -108,6 +108,9 @@ export class PageAnnotationController {
     this._doodl.on("historyChange", (state) =>
       this._emit("historyChange", state)
     );
+    this._doodl.on("selectionChange", (ids) =>
+      this._emit("selectionChange", ids)
+    );
   }
 
   /**

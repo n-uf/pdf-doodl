@@ -74,6 +74,8 @@ export interface PageAnnotationEvents {
   styleChange: (style: ShapeStyle) => void;
   /** Fired when history state changes */
   historyChange: (state: { canUndo: boolean; canRedo: boolean }) => void;
+  /** Fired when selection changes (selected shape IDs) */
+  selectionChange: (selectedIds: string[]) => void;
 }
 
 export type PageAnnotationEventName = keyof PageAnnotationEvents;
