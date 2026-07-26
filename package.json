@@ -1,8 +1,8 @@
 {
-  "name": "doodl-workspace",
+  "name": "pdf-doodl-workspace",
   "version": "26.7.0",
   "private": true,
-  "description": "Workspace for doodl packages and homepage app.",
+  "description": "Workspace for pdf-doodl (doodl packages) and homepage app.",
   "license": "LicenseRef-PolyForm-Perimeter-1.0.1",
   "packageManager": "pnpm@10.12.1",
   "scripts": {

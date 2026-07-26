@@ -7,15 +7,21 @@
 PDF, and ready-made UI bindings. Shape-centric modules cover rendering,
 hit-testing, transforms, and JSON serialization.
 
+This repository is named **pdf-doodl** (product-line home under n-uf); published
+packages keep the **doodl** brand (`@n-uf/doodl*`) because the core engine is
+framework-agnostic canvas annotation, not PDF-only. PDF support lives in
+`@n-uf/doodl-pdf-react`.
+
 ## Quick links
 
 - Documentation homepage: <https://doodl.n-uf.com/> *(pending hosting)*
+- Repository: <https://github.com/n-uf/pdf-doodl>
 - Package READMEs:
   - [`packages/doodl`](packages/doodl/README.md)
   - [`packages/doodl-react`](packages/doodl-react/README.md)
   - [`packages/doodl-pdf-react`](packages/doodl-pdf-react/README.md)
   - [`packages/doodl-go`](packages/doodl-go/README.md)
-- GitHub issues: <https://github.com/n-uf/doodl/issues> *(pending repo create)*
+- GitHub issues: <https://github.com/n-uf/pdf-doodl/issues>
 
 ## Packages
 
