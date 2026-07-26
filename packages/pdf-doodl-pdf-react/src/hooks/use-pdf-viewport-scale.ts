@@ -19,8 +19,10 @@
 import { useCallback, useState } from "react";
 import {
   computeFitHeightScale,
+  computeFitModeScale,
   computeFitPageScale,
   computeFitWidthScale,
+  type FitScaleMode,
 } from "./fit-scale";
 
 // =============================================================================
@@ -75,6 +77,11 @@ export interface UsePdfViewportScaleReturn {
   fitHeight: () => void;
   /** Fit the entire page (width AND height) inside the available viewport */
   fitPage: () => void;
+  /**
+   * Scale that `fitWidth` / `fitHeight` / `fitPage` would apply right now
+   * (clamped), without mutating. `null` when fit cannot be computed.
+   */
+  getFitScale: (mode: FitScaleMode) => number | null;
   /** Whether `pageSize` is known (fit methods are no-ops otherwise) */
   canFit: boolean;
   /** `scale >= maxScale` */
@@ -199,6 +206,32 @@ export function usePdfViewportScale(
     );
   }, [pageSize, measureAvailableSize, clamp]);
 
+  const getFitScale = useCallback(
+    (mode: FitScaleMode): number | null => {
+      if (!pageSize) return null;
+      const available = measureAvailableSize();
+      if (!available) return null;
+      if (mode === "width" && available.width <= 0) return null;
+      if (mode === "height" && available.height <= 0) return null;
+      if (
+        mode === "page" &&
+        (available.width <= 0 || available.height <= 0)
+      ) {
+        return null;
+      }
+      return clamp(
+        computeFitModeScale(
+          mode,
+          available.width,
+          available.height,
+          pageSize.width,
+          pageSize.height,
+        ),
+      );
+    },
+    [pageSize, measureAvailableSize, clamp],
+  );
+
   return {
     scale,
     setScale,
@@ -208,6 +241,7 @@ export function usePdfViewportScale(
     fitWidth,
     fitHeight,
     fitPage,
+    getFitScale,
     canFit: pageSize !== null,
     atMaxZoom: scale >= maxScale,
     atMinZoom: scale <= minScale,

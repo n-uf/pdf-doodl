@@ -22,6 +22,8 @@ import {
   getAnnotationTextLayersByPage,
   PDF_FIT_CYCLE_BUTTON_CLASS,
   PDF_FIT_CYCLE_LABEL_CLASS,
+  PDF_FIT_CYCLE_LED_OFF_CLASS,
+  PDF_FIT_CYCLE_LED_ON_CLASS,
   PDF_ZOOM_PERCENT_BUTTON_CLASS,
   PDF_TEXT_LAYER_SELECTOR,
   useCyclingFitMode,
@@ -245,6 +247,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       descriptor: fitDescriptor,
       nextDescriptor: fitNextDescriptor,
       canFit: canFitPdf,
+      isActive: fitIsActive,
       cycleFit: handleCycleFit,
     } = fitCycle;
     const fitCycleTitle =
@@ -1015,12 +1018,21 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                   onClick={handleCycleFit}
                   tokens={t}
                   isDark={isDark}
+                  active={fitIsActive}
                   className={`mr-2 ${PDF_FIT_CYCLE_BUTTON_CLASS}`}
                   title={fitCycleTitle}
                   disabled={!canFitPdf}
                 >
                   <span className={PDF_FIT_CYCLE_LABEL_CLASS}>
-                    {fitDescriptor.icon} {fitDescriptor.label}
+                    <span
+                      aria-hidden
+                      className={
+                        fitIsActive
+                          ? PDF_FIT_CYCLE_LED_ON_CLASS
+                          : PDF_FIT_CYCLE_LED_OFF_CLASS
+                      }
+                    />
+                    {fitDescriptor.label}
                   </span>
                 </ToolbarButton>
 

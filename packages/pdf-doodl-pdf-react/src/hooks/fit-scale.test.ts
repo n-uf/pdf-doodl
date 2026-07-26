@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   computeFitHeightScale,
+  computeFitModeScale,
   computeFitPageScale,
   computeFitWidthScale,
+  isFitScaleActive,
+  PDF_FIT_SCALE_EPSILON,
 } from "./fit-scale";
 
 describe("fit-scale (uniform, axis-correct)", () => {
@@ -54,5 +57,54 @@ describe("fit-scale (uniform, axis-correct)", () => {
     expect(fitW).toBeGreaterThan(1);
     expect(fitH).toBeLessThan(1);
     expect(fitW).not.toBeCloseTo(fitH);
+  });
+
+  it("computeFitModeScale dispatches to the matching axis formula", () => {
+    expect(
+      computeFitModeScale(
+        "width",
+        viewport.width,
+        viewport.height,
+        page.width,
+        page.height,
+      ),
+    ).toBeCloseTo(computeFitWidthScale(viewport.width, page.width));
+    expect(
+      computeFitModeScale(
+        "height",
+        viewport.width,
+        viewport.height,
+        page.width,
+        page.height,
+      ),
+    ).toBeCloseTo(computeFitHeightScale(viewport.height, page.height));
+    expect(
+      computeFitModeScale(
+        "page",
+        viewport.width,
+        viewport.height,
+        page.width,
+        page.height,
+      ),
+    ).toBeCloseTo(
+      computeFitPageScale(
+        viewport.width,
+        viewport.height,
+        page.width,
+        page.height,
+      ),
+    );
+  });
+
+  it("isFitScaleActive tolerates epsilon and rejects zoom steps", () => {
+    const target = 1.25;
+    expect(isFitScaleActive(target, target)).toBe(true);
+    expect(isFitScaleActive(target + PDF_FIT_SCALE_EPSILON, target)).toBe(
+      true,
+    );
+    expect(isFitScaleActive(target + PDF_FIT_SCALE_EPSILON * 2, target)).toBe(
+      false,
+    );
+    expect(isFitScaleActive(target - 0.25, target)).toBe(false);
   });
 });

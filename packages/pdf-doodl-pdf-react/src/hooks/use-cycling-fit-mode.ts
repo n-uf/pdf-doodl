@@ -7,16 +7,24 @@
  * it applies the *next* mode in the cycle and updates the label to match —
  * so the label always agrees with the scale on screen (avoids reading
  * “height” while the page is still width-fitted).
+ *
+ * `isActive` is true only while the current zoom still matches that mode’s
+ * computed fit scale (within {@link PDF_FIT_SCALE_EPSILON}). Manual zoom
+ * turns the LED off without changing the label.
  */
 
 import { useCallback, useState, type CSSProperties } from "react";
+import {
+  isFitScaleActive,
+  PDF_FIT_SCALE_EPSILON,
+} from "./fit-scale";
 import type { UsePdfViewportScaleReturn } from "./use-pdf-viewport-scale";
 
 export type PdfFitMode = "width" | "height" | "page";
 
 export interface PdfFitModeDescriptor {
   mode: PdfFitMode;
-  icon: string;
+  /** Short text label — no glyphs; hosts may lowercase for chrome. */
   label: string;
   title: string;
 }
@@ -30,19 +38,16 @@ export const PDF_FIT_MODE_ORDER: readonly PdfFitMode[] = [
 const FIT_MODE_DESCRIPTORS: Record<PdfFitMode, PdfFitModeDescriptor> = {
   width: {
     mode: "width",
-    icon: "↔",
     label: "Width",
     title: "Fit width",
   },
   height: {
     mode: "height",
-    icon: "↕",
     label: "Height",
     title: "Fit height",
   },
   page: {
     mode: "page",
-    icon: "⬚",
     label: "Page",
     title: "Fit page",
   },
@@ -54,17 +59,37 @@ export function getPdfFitModeDescriptor(mode: PdfFitMode): PdfFitModeDescriptor 
 
 /**
  * Fixed width on the fit-cycle button (scales with button font-size via `ch`).
- * Sized for longest icon+label ("↕ Height") plus typical `px-2` padding under
+ * Sized for longest text label ("Height") + LED + typical `px-2` padding under
  * border-box — keep width on the outer control, not only the inner label.
  *
  * Prefer {@link PDF_FIT_CYCLE_BUTTON_STYLE} when the host may purge Tailwind.
  */
 export const PDF_FIT_CYCLE_BUTTON_CLASS =
-  "inline-flex h-7 w-[12ch] shrink-0 items-center justify-center whitespace-nowrap";
+  "inline-flex h-7 w-[9ch] shrink-0 items-center justify-center whitespace-nowrap";
 
 /** Inner row; outer {@link PDF_FIT_CYCLE_BUTTON_CLASS} holds stable width. */
 export const PDF_FIT_CYCLE_LABEL_CLASS =
-  "inline-flex items-center justify-center gap-0.5";
+  "inline-flex items-center justify-center gap-1";
+
+/**
+ * LED disk — space reserved in both states so the button width never jumps.
+ * Pair with {@link PDF_FIT_CYCLE_LED_ON_CLASS} / {@link PDF_FIT_CYCLE_LED_OFF_CLASS}.
+ */
+export const PDF_FIT_CYCLE_LED_CLASS =
+  "inline-block size-1.5 shrink-0 rounded-full bg-current";
+
+/** Fit scale currently matches the shown mode. */
+export const PDF_FIT_CYCLE_LED_ON_CLASS = `${PDF_FIT_CYCLE_LED_CLASS} opacity-90`;
+
+/** Fit scale does not match — invisible but still occupies layout. */
+export const PDF_FIT_CYCLE_LED_OFF_CLASS = `${PDF_FIT_CYCLE_LED_CLASS} opacity-0`;
+
+/**
+ * Active chrome for the fit-cycle control when `aria-pressed` is true.
+ * Distinct fill + border + weight (not opacity-only).
+ */
+export const PDF_FIT_CYCLE_ACTIVE_CLASS =
+  "aria-pressed:bg-current/15 aria-pressed:border-current/50 aria-pressed:font-semibold";
 
 /**
  * Identical fixed square for zoom − / + so glyph width cannot skew the strip.
@@ -116,11 +141,11 @@ export const PDF_ZOOM_STEP_BUTTON_STYLE: CSSProperties = {
   justifyContent: "center",
 };
 
-/** Purge-proof fixed width for the fit-cycle control. */
+/** Purge-proof fixed width for the fit-cycle control (text + LED). */
 export const PDF_FIT_CYCLE_BUTTON_STYLE: CSSProperties = {
   boxSizing: "border-box",
-  width: "12ch",
-  minWidth: "12ch",
+  width: "9ch",
+  minWidth: "9ch",
   height: 28,
   flexShrink: 0,
   display: "inline-flex",
@@ -148,7 +173,7 @@ export function getPdfFitCycleTitle(
 
 export type CyclingFitViewport = Pick<
   UsePdfViewportScaleReturn,
-  "fitWidth" | "fitHeight" | "fitPage" | "canFit"
+  "fitWidth" | "fitHeight" | "fitPage" | "canFit" | "scale" | "getFitScale"
 >;
 
 export interface UseCyclingFitModeOptions {
@@ -157,6 +182,11 @@ export interface UseCyclingFitModeOptions {
    * Until the first click, the control shows this as the pending fit.
    */
   initialMode?: PdfFitMode;
+  /**
+   * Absolute scale epsilon for {@link UseCyclingFitModeReturn.isActive}.
+   * Default: {@link PDF_FIT_SCALE_EPSILON}.
+   */
+  activeEpsilon?: number;
 }
 
 export interface UseCyclingFitModeReturn {
@@ -170,13 +200,21 @@ export interface UseCyclingFitModeReturn {
   descriptor: PdfFitModeDescriptor;
   nextDescriptor: PdfFitModeDescriptor;
   canFit: boolean;
+  /**
+   * True when current zoom matches this mode’s computed fit scale within
+   * epsilon. Turns off when the user zooms ± away.
+   */
+  isActive: boolean;
   /** Apply the next fit mode in the cycle and update the label to match. */
   cycleFit: () => void;
 }
 
 function applyFitMode(
   mode: PdfFitMode,
-  viewport: CyclingFitViewport,
+  viewport: Pick<
+    CyclingFitViewport,
+    "fitWidth" | "fitHeight" | "fitPage"
+  >,
 ): void {
   switch (mode) {
     case "width":
@@ -195,9 +233,10 @@ export function useCyclingFitMode(
   viewport: CyclingFitViewport,
   options: UseCyclingFitModeOptions = {},
 ): UseCyclingFitModeReturn {
-  const { initialMode = "width" } = options;
+  const { initialMode = "width", activeEpsilon = PDF_FIT_SCALE_EPSILON } =
+    options;
   const [lastApplied, setLastApplied] = useState<PdfFitMode | null>(null);
-  const { fitWidth, fitHeight, fitPage, canFit } = viewport;
+  const { fitWidth, fitHeight, fitPage, canFit, scale, getFitScale } = viewport;
 
   const mode = lastApplied ?? initialMode;
   const nextMode =
@@ -205,14 +244,27 @@ export function useCyclingFitMode(
   const descriptor = getPdfFitModeDescriptor(mode);
   const nextDescriptor = getPdfFitModeDescriptor(nextMode);
 
+  const targetScale = getFitScale(mode);
+  const isActive =
+    targetScale !== null &&
+    isFitScaleActive(scale, targetScale, activeEpsilon);
+
   const cycleFit = useCallback(() => {
     const toApply =
       lastApplied === null ? initialMode : nextPdfFitMode(lastApplied);
-    applyFitMode(toApply, { fitWidth, fitHeight, fitPage, canFit });
+    applyFitMode(toApply, { fitWidth, fitHeight, fitPage });
     setLastApplied(toApply);
-  }, [lastApplied, initialMode, fitWidth, fitHeight, fitPage, canFit]);
+  }, [lastApplied, initialMode, fitWidth, fitHeight, fitPage]);
 
-  return { mode, nextMode, descriptor, nextDescriptor, canFit, cycleFit };
+  return {
+    mode,
+    nextMode,
+    descriptor,
+    nextDescriptor,
+    canFit,
+    isActive,
+    cycleFit,
+  };
 }
 
 /** Convenience title from a {@link UseCyclingFitModeReturn}. */
