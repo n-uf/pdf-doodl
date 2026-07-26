@@ -12,7 +12,14 @@ export {
   type PdfAnnotationViewerProps,
 } from "./pdf-annotation-viewer";
 export { ZoomControls, type ZoomControlsProps } from "./zoom-controls";
-export { FindBar, type FindBarProps } from "./find-bar";
+export {
+  FindBar,
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_ACCENT_ON_CLASS,
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS,
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS,
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS,
+  type FindBarProps,
+} from "./find-bar";
 
 // Re-export Document from react-pdf to ensure context sharing
 // When Document and Page come from the same module instance, React context works

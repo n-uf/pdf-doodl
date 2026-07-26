@@ -67,6 +67,14 @@ export type {
   UsePdfFindReturn,
 } from "./hooks";
 
+// FindBar toggle class tokens (SSR-safe strings)
+export {
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_ACCENT_ON_CLASS,
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS,
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS,
+  FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS,
+} from "./components/find-bar";
+
 // Component types only (not the implementations)
 export type { PdfAnnotationPageProps } from "./components/pdf-annotation-page";
 export type {

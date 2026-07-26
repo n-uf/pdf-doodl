@@ -32,6 +32,21 @@ export interface FindBarProps {
 const DEFAULT_BUTTON_CLASS =
   "px-2 py-1 text-xs border border-current/20 rounded-sm hover:bg-current/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
 
+/** Muted off-state styling for the case-sensitive (Aa) toggle. */
+export const FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS =
+  "text-current/40 bg-transparent border-current/15";
+
+/** Active on-state styling for the case-sensitive (Aa) toggle (aria-pressed=true). */
+export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS =
+  "aria-pressed:text-current aria-pressed:border-current/55 aria-pressed:bg-current/18 aria-pressed:font-semibold";
+
+/** Full off/on styling — pair with a base button class. */
+export const FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS = `${FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS}`;
+
+/** Accent-token override for on-state when the host app defines accent colors. */
+export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ACCENT_ON_CLASS =
+  "aria-pressed:border-accent/40 aria-pressed:bg-accent/15 aria-pressed:text-accent";
+
 export function FindBar({
   find,
   className = "",
@@ -128,7 +143,7 @@ export function FindBar({
           onClick={() => setCaseSensitive(!caseSensitive)}
           title="Case-sensitive"
           aria-pressed={caseSensitive}
-          className={`${buttonClass} ${caseSensitive ? "opacity-100 font-semibold" : "opacity-60"}`}
+          className={`${buttonClass} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS}`}
         >
           Aa
         </button>
