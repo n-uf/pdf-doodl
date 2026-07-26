@@ -44,6 +44,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { DoodlGoChromeStyles } from "./src/chrome-styles";
 import { useKeyboardShortcuts, useTheme } from "./src/hooks";
 import {
   KEYBOARD_SHORTCUTS,
@@ -910,8 +911,9 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
 
     return (
       <div
-        className={`h-screen flex flex-col ${t.bg} ${t.text} font-mono ${t.selection} transition-colors duration-300 overflow-hidden ${className}`}
+        className={`doodl-go h-screen flex flex-col ${t.bg} ${t.text} font-mono ${t.selection} transition-colors duration-300 overflow-hidden ${className}`}
       >
+        <DoodlGoChromeStyles />
         {/* Hidden file input */}
         <input
           ref={fileInputRef}

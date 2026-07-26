@@ -64,7 +64,7 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`px-3 py-1.5 text-[10px] tracking-wider border transition-colors ${
+      className={`px-3 py-1.5 text-[10px] tracking-wider border outline-none transition-colors ${
         disabled ? disabledClasses : variantClasses
       } ${active ? "bg-zinc-800" : ""} ${className}`}
     >
