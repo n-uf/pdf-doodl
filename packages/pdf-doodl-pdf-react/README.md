@@ -28,3 +28,9 @@ In the host app CSS:
 
 Without `@source`, fixed widths (`w-[7ch]`, `size-6`, …) never apply and
 toolbar controls stay content-sized.
+
+**Prefer the purge-proof `style` tokens** when hosting under a foreign Tailwind
+app: `PDF_ZOOM_PERCENT_BUTTON_STYLE`, `PDF_ZOOM_STEP_BUTTON_STYLE`,
+`PDF_FIT_CYCLE_BUTTON_STYLE`, `FIND_BAR_MATCH_COUNT_STYLE`. These set
+`width` / `fontVariantNumeric: "tabular-nums"` / monospace inline so ##% vs
+###% cannot jump even if utilities are purged.

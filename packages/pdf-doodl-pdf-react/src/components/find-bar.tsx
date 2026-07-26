@@ -14,7 +14,13 @@
  * generated — importing the constant alone does not keep classes from purge.
  */
 
-import { useEffect, useRef, type KeyboardEvent, type ReactElement } from "react";
+import {
+  useEffect,
+  useRef,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactElement,
+} from "react";
 import type { UsePdfFindReturn } from "../hooks/use-pdf-find";
 
 export interface FindBarProps {
@@ -42,7 +48,35 @@ const DEFAULT_BUTTON_CLASS =
  * width so the find strip does not shift when the count appears or grows.
  */
 export const FIND_BAR_MATCH_COUNT_CLASS =
-  "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums text-center";
+  "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap font-mono tabular-nums text-center";
+
+/** Purge-proof match-count slot — prefer `style={…}` over classes alone. */
+export const FIND_BAR_MATCH_COUNT_STYLE: CSSProperties = {
+  boxSizing: "border-box",
+  width: "7ch",
+  minWidth: "7ch",
+  flexShrink: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  whiteSpace: "nowrap",
+  textAlign: "center",
+  fontVariantNumeric: "tabular-nums",
+  fontFamily:
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+};
+
+/** Purge-proof Aa toggle size. */
+export const FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_STYLE: CSSProperties = {
+  boxSizing: "border-box",
+  width: 28,
+  height: 28,
+  minWidth: 28,
+  flexShrink: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
 
 /** Relative wrapper for the find input + absolute clear control. */
 export const FIND_BAR_INPUT_WRAP_CLASS = "relative min-w-0 flex-1";
@@ -170,6 +204,7 @@ export function FindBar({
         ) : null}
       </div>
       <span
+        style={FIND_BAR_MATCH_COUNT_STYLE}
         className={`${FIND_BAR_MATCH_COUNT_CLASS} text-xs opacity-70`}
         aria-live="polite"
       >
@@ -202,6 +237,7 @@ export function FindBar({
             caseSensitive ? "Case-sensitive: on" : "Case-sensitive: off"
           }
           aria-pressed={caseSensitive}
+          style={FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_STYLE}
           className={`${buttonClass} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS}`}
         >
           Aa

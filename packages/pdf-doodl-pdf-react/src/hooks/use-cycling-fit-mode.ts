@@ -7,7 +7,7 @@
  * applies that fit and advances the label to the following mode.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type CSSProperties } from "react";
 import type { UsePdfViewportScaleReturn } from "./use-pdf-viewport-scale";
 
 export type PdfFitMode = "width" | "height" | "page";
@@ -55,7 +55,7 @@ export function getPdfFitModeDescriptor(mode: PdfFitMode): PdfFitModeDescriptor 
  * Sized for longest icon+label ("↕ Height") plus typical `px-2` padding under
  * border-box — keep width on the outer control, not only the inner label.
  *
- * Tailwind hosts: `@source` this package so `w-[12ch]` is not purged.
+ * Prefer {@link PDF_FIT_CYCLE_BUTTON_STYLE} when the host may purge Tailwind.
  */
 export const PDF_FIT_CYCLE_BUTTON_CLASS =
   "inline-flex w-[12ch] shrink-0 items-center justify-center whitespace-nowrap";
@@ -72,11 +72,60 @@ export const PDF_ZOOM_STEP_BUTTON_CLASS =
   "inline-flex size-6 shrink-0 items-center justify-center p-0";
 
 /**
- * Fixed width for zoom percent button — fits max scale label ("300%") plus
- * typical `px-2` padding under border-box.
+ * Fixed width for zoom percent — sized for max label `"300%"` with padding.
+ * Also set {@link PDF_ZOOM_PERCENT_BUTTON_STYLE} so purge cannot drop the lock.
  */
 export const PDF_ZOOM_PERCENT_BUTTON_CLASS =
-  "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums";
+  "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap text-center font-mono tabular-nums";
+
+/** Longest zoom percent label this control is sized for (max scale 300%). */
+export const PDF_ZOOM_PERCENT_MAX_LABEL = "300%";
+
+/**
+ * Purge-proof layout for the zoom percent control. Apply via `style={…}` —
+ * does not depend on Tailwind scanning imported class-string constants.
+ * Uses tabular + monospace so ##% and ###% share digit advance width.
+ */
+export const PDF_ZOOM_PERCENT_BUTTON_STYLE: CSSProperties = {
+  boxSizing: "border-box",
+  width: "7ch",
+  minWidth: "7ch",
+  flexShrink: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  whiteSpace: "nowrap",
+  textAlign: "center",
+  fontVariantNumeric: "tabular-nums",
+  fontFamily:
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+};
+
+/** Purge-proof equal squares for zoom − / +. */
+export const PDF_ZOOM_STEP_BUTTON_STYLE: CSSProperties = {
+  boxSizing: "border-box",
+  width: 24,
+  height: 24,
+  minWidth: 24,
+  padding: 0,
+  flexShrink: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+/** Purge-proof fixed width for the fit-cycle control. */
+export const PDF_FIT_CYCLE_BUTTON_STYLE: CSSProperties = {
+  boxSizing: "border-box",
+  width: "12ch",
+  minWidth: "12ch",
+  flexShrink: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  whiteSpace: "nowrap",
+};
+
 export function nextPdfFitMode(mode: PdfFitMode): PdfFitMode {
   const index = PDF_FIT_MODE_ORDER.indexOf(mode);
   const nextIndex = (index + 1) % PDF_FIT_MODE_ORDER.length;
