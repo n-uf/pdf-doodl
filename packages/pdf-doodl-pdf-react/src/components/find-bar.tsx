@@ -1,19 +1,26 @@
 "use client";
 
 /**
- * FindBar - Optional default UI for `usePdfFind`
+ * FindBar — reusable find/search control strip
  *
- * A minimal, unopinionated find-in-PDF input strip (query + in-field clear,
- * match count, prev/next, case-sensitive toggle). Consumers who want fully
- * custom chrome should use `usePdfFind` directly and build their own UI —
- * this component exists so simple integrations don't have to hand-roll one.
+ * Bundles: text input · in-field clear · optional match count · prev/next ·
+ * case-sensitive toggle (ON/OFF visually distinct via fill + border + weight).
+ *
+ * Two binding modes:
+ * 1. **Controlled** — `value` / `onChange` (+ optional match nav / case props)
+ * 2. **Hook** — pass `find={usePdfFind(...)}` for a one-liner PDF find strip
+ *
+ * Layout is a single `inline-flex` cluster (no `flex-1` between input and
+ * controls). Shared control height is 28px (`h-7`) to align with ZoomControls.
+ *
+ * ## Theming
+ * Pass `unstyled` + slot `*ClassName` props to replace default Tailwind chrome
+ * with host tokens (e.g. console `.pdf-tb-*`). Size locks stay via `*_STYLE`.
  *
  * ## Tailwind consumers
  * Class tokens below are plain string constants. Host apps that use Tailwind
  * must `@source` this package (src or dist) so utilities like `w-[7ch]` are
  * generated — importing the constant alone does not keep classes from purge.
- *
- * Shared default control height is 28px (`h-7`) to align with ZoomControls.
  */
 
 import {
@@ -25,25 +32,46 @@ import {
 } from "react";
 import type { UsePdfFindReturn } from "../hooks/use-pdf-find";
 
-export interface FindBarProps {
-  /** Return value of `usePdfFind` */
-  find: UsePdfFindReturn;
-  /** Additional className for the root container */
-  className?: string;
-  /** Additional className for the text input */
-  inputClassName?: string;
-  /** Additional className applied to buttons */
-  buttonClassName?: string;
-  /** Input placeholder (default: "Find in document…") */
-  placeholder?: string;
-  /** Autofocus the input on mount (default: true) */
-  autoFocus?: boolean;
-  /** Show the case-sensitive toggle (default: true) */
-  showCaseSensitiveToggle?: boolean;
-}
+// ─── Layout / size tokens (purge-proof) ─────────────────────────────────────
 
-const DEFAULT_BUTTON_CLASS =
-  "inline-flex h-7 items-center justify-center px-2 text-xs border border-current/20 rounded-md hover:bg-current/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
+/** Root cluster — packed horizontal strip; never grows to fill leftover width. */
+export const FIND_BAR_ROOT_CLASS =
+  "inline-flex h-7 shrink-0 items-center gap-1";
+
+export const FIND_BAR_ROOT_STYLE: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  flexShrink: 0,
+  height: 28,
+  gap: 4,
+};
+
+/**
+ * Relative wrapper for the find input + absolute clear control.
+ * Fixed width + shrink-0 — do not use `flex-1` (stretches and gaps nav).
+ */
+export const FIND_BAR_INPUT_WRAP_CLASS =
+  "relative inline-flex h-7 w-[11rem] max-w-[14rem] shrink-0 items-center";
+
+export const FIND_BAR_INPUT_WRAP_STYLE: CSSProperties = {
+  position: "relative",
+  display: "inline-flex",
+  alignItems: "center",
+  width: "11rem",
+  maxWidth: "14rem",
+  height: 28,
+  flexShrink: 0,
+};
+
+/** Right padding so typed text does not sit under the clear control. */
+export const FIND_BAR_INPUT_WITH_CLEAR_CLASS = "box-border w-full h-full pr-7";
+
+/**
+ * Absolute clear (✕) inside the find input’s right edge.
+ * Show only when `value.length > 0`.
+ */
+export const FIND_BAR_CLEAR_BUTTON_CLASS =
+  "absolute right-0.5 top-0 bottom-0 z-10 my-auto inline-flex h-5 w-5 items-center justify-center rounded-md text-current/55 hover:bg-current/10 hover:text-current";
 
 /**
  * Fixed slot for match count (`999/999` / `0/0` / `…`). Always reserve this
@@ -52,7 +80,6 @@ const DEFAULT_BUTTON_CLASS =
 export const FIND_BAR_MATCH_COUNT_CLASS =
   "inline-flex h-7 w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums text-center";
 
-/** Purge-proof match-count slot — prefer `style={…}` over classes alone. */
 export const FIND_BAR_MATCH_COUNT_STYLE: CSSProperties = {
   boxSizing: "border-box",
   width: "7ch",
@@ -80,24 +107,6 @@ export const FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_STYLE: CSSProperties = {
 };
 
 /**
- * Relative wrapper for the find input + absolute clear control.
- * Flex + fixed height keeps the clear glyph vertically centered in the field.
- */
-export const FIND_BAR_INPUT_WRAP_CLASS =
-  "relative flex h-7 w-[11rem] max-w-[14rem] shrink-0 items-center";
-
-/** Right padding so typed text does not sit under the clear control. */
-export const FIND_BAR_INPUT_WITH_CLEAR_CLASS = "w-full h-full pr-7";
-
-/**
- * Absolute clear (✕) inside the find input’s right edge.
- * `inset-y-0` + `my-auto` centers against the wrap height (not a flaky %).
- * Show only when `query.length > 0`.
- */
-export const FIND_BAR_CLEAR_BUTTON_CLASS =
-  "absolute right-0.5 top-0 bottom-0 z-10 my-auto inline-flex h-5 w-5 items-center justify-center rounded-md text-current/55 hover:bg-current/10 hover:text-current";
-
-/**
  * Fixed square for the case-sensitive (Aa) toggle so ON fill cannot expand
  * the control. Radius matches other toolbar chrome (`rounded-md`).
  */
@@ -114,7 +123,6 @@ export const FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS =
 /**
  * ON (`aria-pressed=true`): filled + high-contrast text.
  * Must remain readable as “on” without inspecting aria attributes.
- * Avoid stacking underline+bold on top of a solid fill (reads garish).
  */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS =
   "aria-pressed:bg-current aria-pressed:text-white aria-pressed:border-current aria-pressed:font-semibold aria-pressed:hover:bg-current aria-pressed:hover:text-white";
@@ -125,36 +133,167 @@ export const FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS = `${FIND_BAR_CASE_SENSITIVE_T
 /**
  * Accent-token ON override when the host defines `--color-accent` / `accent`
  * and a contrasting `bg` (or `Canvas`) text color.
- * Tonal fill (not solid accent slab) so ON stays obvious beside muted chrome
- * without overpowering neighboring layer dots.
  */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ACCENT_ON_CLASS =
   "aria-pressed:bg-accent/20 aria-pressed:text-accent aria-pressed:border-accent aria-pressed:hover:bg-accent/25 aria-pressed:hover:text-accent";
 
-export function FindBar({
-  find,
-  className = "",
-  inputClassName = "",
-  buttonClassName = "",
-  placeholder = "Find in document…",
-  autoFocus = true,
-  showCaseSensitiveToggle = true,
-}: FindBarProps): ReactElement {
+// ─── Default chrome (Tailwind) ──────────────────────────────────────────────
+
+const DEFAULT_BUTTON_CLASS =
+  "inline-flex h-7 items-center justify-center px-2 text-xs border border-current/20 rounded-md hover:bg-current/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
+
+const DEFAULT_INPUT_CLASS =
+  "box-border px-2 text-xs border border-current/20 rounded-md bg-transparent outline-none focus:border-current/45";
+
+// ─── Props ──────────────────────────────────────────────────────────────────
+
+/** Shared chrome / behavior props. */
+export interface FindBarChromeProps {
+  /** Additional className for the root cluster */
+  className?: string;
+  /** ClassName for the input wrap (relative container) */
+  inputWrapClassName?: string;
+  /** ClassName for the text input */
+  inputClassName?: string;
+  /** ClassName for the in-field clear button */
+  clearButtonClassName?: string;
+  /** ClassName for the match-count slot */
+  matchCountClassName?: string;
+  /** ClassName applied to prev/next (and Aa when no dedicated class) */
+  buttonClassName?: string;
+  /** ClassName for the case-sensitive toggle (falls back to `buttonClassName`) */
+  caseSensitiveClassName?: string;
+  /** Input placeholder (default: "Find in document…") */
+  placeholder?: string;
+  /** Autofocus the input on mount (default: true) */
+  autoFocus?: boolean;
+  /** Show the match-count slot (default: true) */
+  showMatchCount?: boolean;
+  /** Show the case-sensitive toggle (default: true) */
+  showCaseSensitiveToggle?: boolean;
+  /**
+   * Skip default Tailwind chrome. Layout size styles remain; slot classNames
+   * supply host theming (e.g. console `.pdf-tb-*`).
+   */
+  unstyled?: boolean;
+}
+
+/** Controlled search strip — reusable outside PDF find. */
+export interface FindBarControlledProps extends FindBarChromeProps {
+  find?: undefined;
+  /** Current query text */
+  value: string;
+  /** Query text changed */
+  onChange: (value: string) => void;
+  /** Case-sensitive mode (default: false) */
+  caseSensitive?: boolean;
+  /** Case-sensitive toggle changed */
+  onCaseSensitiveChange?: (caseSensitive: boolean) => void;
+  /** 0-based index of the active match; −1 when none (default: −1) */
+  matchIndex?: number;
+  /** Total match count (default: 0) */
+  matchCount?: number;
+  /** True while a search is pending (shows `…` in the count slot) */
+  isSearching?: boolean;
+  /** Go to previous match */
+  onPrev?: () => void;
+  /** Go to next match */
+  onNext?: () => void;
+  /** Clear query / dismiss find (also bound to Escape) */
+  onClear?: () => void;
+}
+
+/** Convenience: bind FindBar to a `usePdfFind()` return value. */
+export interface FindBarFindProps extends FindBarChromeProps {
+  /** Return value of `usePdfFind` */
+  find: UsePdfFindReturn;
+}
+
+export type FindBarProps = FindBarControlledProps | FindBarFindProps;
+
+interface ResolvedFindBarState {
+  value: string;
+  onChange: (value: string) => void;
+  caseSensitive: boolean;
+  onCaseSensitiveChange: ((caseSensitive: boolean) => void) | undefined;
+  matchIndex: number;
+  matchCount: number;
+  isSearching: boolean;
+  onPrev: (() => void) | undefined;
+  onNext: (() => void) | undefined;
+  onClear: (() => void) | undefined;
+}
+
+function resolveFindBarState(props: FindBarProps): ResolvedFindBarState {
+  if ("find" in props && props.find !== undefined) {
+    const { find } = props;
+    return {
+      value: find.query,
+      onChange: find.setQuery,
+      caseSensitive: find.caseSensitive,
+      onCaseSensitiveChange: find.setCaseSensitive,
+      matchIndex: find.activeIndex,
+      matchCount: find.matches.length,
+      isSearching: find.isSearching,
+      onPrev: find.prev,
+      onNext: find.next,
+      onClear: find.clear,
+    };
+  }
+
+  const controlled = props as FindBarControlledProps;
+  return {
+    value: controlled.value,
+    onChange: controlled.onChange,
+    caseSensitive: controlled.caseSensitive ?? false,
+    onCaseSensitiveChange: controlled.onCaseSensitiveChange,
+    matchIndex: controlled.matchIndex ?? -1,
+    matchCount: controlled.matchCount ?? 0,
+    isSearching: controlled.isSearching ?? false,
+    onPrev: controlled.onPrev,
+    onNext: controlled.onNext,
+    onClear: controlled.onClear,
+  };
+}
+
+function joinClassNames(...parts: Array<string | undefined>): string {
+  return parts.filter((part) => part !== undefined && part !== "").join(" ");
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
+
+export function FindBar(props: FindBarProps): ReactElement {
   const {
-    query,
-    setQuery,
+    className = "",
+    inputWrapClassName = "",
+    inputClassName = "",
+    clearButtonClassName = "",
+    matchCountClassName = "",
+    buttonClassName = "",
+    caseSensitiveClassName,
+    placeholder = "Find in document…",
+    autoFocus = true,
+    showMatchCount = true,
+    showCaseSensitiveToggle = true,
+    unstyled = false,
+  } = props;
+
+  const {
+    value,
+    onChange,
     caseSensitive,
-    setCaseSensitive,
-    matches,
-    activeIndex,
-    next,
-    prev,
-    clear,
+    onCaseSensitiveChange,
+    matchIndex,
+    matchCount,
     isSearching,
-  } = find;
+    onPrev,
+    onNext,
+    onClear,
+  } = resolveFindBarState(props);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const hasQuery = query.length > 0;
+  const hasQuery = value.length > 0;
+  const hasMatches = matchCount > 0;
 
   useEffect(() => {
     if (autoFocus) {
@@ -164,90 +303,141 @@ export function FindBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const buttonClass = `${DEFAULT_BUTTON_CLASS} ${buttonClassName}`;
-  const hasMatches = matches.length > 0;
   const countLabel = isSearching
     ? "…"
     : hasMatches
-      ? `${activeIndex + 1}/${matches.length}`
-      : query.trim().length > 0
+      ? `${matchIndex + 1}/${matchCount}`
+      : value.trim().length > 0
         ? "0/0"
         : "";
+
+  const handleClear = (): void => {
+    if (onClear !== undefined) {
+      onClear();
+      return;
+    }
+    onChange("");
+  };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === "Enter") {
       event.preventDefault();
       if (event.shiftKey) {
-        prev();
+        onPrev?.();
       } else {
-        next();
+        onNext?.();
       }
     } else if (event.key === "Escape") {
       event.preventDefault();
-      clear();
+      handleClear();
     }
   };
 
+  const rootClass = joinClassNames(
+    unstyled ? undefined : FIND_BAR_ROOT_CLASS,
+    className,
+  );
+  const wrapClass = joinClassNames(
+    unstyled ? undefined : FIND_BAR_INPUT_WRAP_CLASS,
+    inputWrapClassName,
+  );
+  const inputClass = joinClassNames(
+    unstyled ? undefined : DEFAULT_INPUT_CLASS,
+    unstyled ? undefined : FIND_BAR_INPUT_WITH_CLEAR_CLASS,
+    inputClassName,
+  );
+  const clearClass = joinClassNames(
+    unstyled ? undefined : FIND_BAR_CLEAR_BUTTON_CLASS,
+    clearButtonClassName,
+  );
+  const countClass = joinClassNames(
+    unstyled ? undefined : FIND_BAR_MATCH_COUNT_CLASS,
+    unstyled ? undefined : "text-xs opacity-70",
+    matchCountClassName,
+  );
+  const navButtonClass = joinClassNames(
+    unstyled ? undefined : DEFAULT_BUTTON_CLASS,
+    buttonClassName,
+  );
+  const aaButtonClass = joinClassNames(
+    unstyled ? undefined : DEFAULT_BUTTON_CLASS,
+    unstyled ? undefined : FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS,
+    caseSensitiveClassName ?? buttonClassName,
+  );
+
+  const showAa =
+    showCaseSensitiveToggle && onCaseSensitiveChange !== undefined;
+
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
-      <div className={FIND_BAR_INPUT_WRAP_CLASS}>
+    <div
+      className={rootClass}
+      style={unstyled ? FIND_BAR_ROOT_STYLE : undefined}
+      role="search"
+    >
+      <div
+        className={wrapClass}
+        style={unstyled ? FIND_BAR_INPUT_WRAP_STYLE : undefined}
+      >
         <input
           ref={inputRef}
           type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`box-border px-2 text-xs border border-current/20 rounded-md bg-transparent outline-none focus:border-current/45 ${FIND_BAR_INPUT_WITH_CLEAR_CLASS} ${inputClassName}`}
+          className={inputClass}
+          aria-label={placeholder}
         />
         {hasQuery ? (
           <button
             type="button"
-            onClick={clear}
+            onClick={handleClear}
             title="Clear (Esc)"
             aria-label="Clear search"
-            className={FIND_BAR_CLEAR_BUTTON_CLASS}
+            className={clearClass}
           >
             ✕
           </button>
         ) : null}
       </div>
-      <span
-        style={FIND_BAR_MATCH_COUNT_STYLE}
-        className={`${FIND_BAR_MATCH_COUNT_CLASS} text-xs opacity-70`}
-        aria-live="polite"
-      >
-        {countLabel !== "" ? countLabel : "\u00a0"}
-      </span>
+      {showMatchCount ? (
+        <span
+          style={FIND_BAR_MATCH_COUNT_STYLE}
+          className={countClass}
+          aria-live="polite"
+        >
+          {countLabel !== "" ? countLabel : "\u00a0"}
+        </span>
+      ) : null}
       <button
         type="button"
-        onClick={prev}
-        disabled={!hasMatches}
+        onClick={() => onPrev?.()}
+        disabled={!hasMatches || onPrev === undefined}
         title="Previous match (Shift+Enter)"
-        className={buttonClass}
+        className={navButtonClass}
       >
         ↑
       </button>
       <button
         type="button"
-        onClick={next}
-        disabled={!hasMatches}
+        onClick={() => onNext?.()}
+        disabled={!hasMatches || onNext === undefined}
         title="Next match (Enter)"
-        className={buttonClass}
+        className={navButtonClass}
       >
         ↓
       </button>
-      {showCaseSensitiveToggle ? (
+      {showAa ? (
         <button
           type="button"
-          onClick={() => setCaseSensitive(!caseSensitive)}
+          onClick={() => onCaseSensitiveChange(!caseSensitive)}
           title={caseSensitive ? "Case-sensitive (on)" : "Case-sensitive (off)"}
           aria-label={
             caseSensitive ? "Case-sensitive: on" : "Case-sensitive: off"
           }
           aria-pressed={caseSensitive}
           style={FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_STYLE}
-          className={`${buttonClass} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS}`}
+          className={aaButtonClass}
         >
           Aa
         </button>

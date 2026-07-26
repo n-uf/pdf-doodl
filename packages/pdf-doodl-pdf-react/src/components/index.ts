@@ -23,8 +23,14 @@ export {
   FIND_BAR_CLEAR_BUTTON_CLASS,
   FIND_BAR_INPUT_WITH_CLEAR_CLASS,
   FIND_BAR_INPUT_WRAP_CLASS,
+  FIND_BAR_INPUT_WRAP_STYLE,
   FIND_BAR_MATCH_COUNT_CLASS,
   FIND_BAR_MATCH_COUNT_STYLE,
+  FIND_BAR_ROOT_CLASS,
+  FIND_BAR_ROOT_STYLE,
+  type FindBarChromeProps,
+  type FindBarControlledProps,
+  type FindBarFindProps,
   type FindBarProps,
 } from "./find-bar";
 

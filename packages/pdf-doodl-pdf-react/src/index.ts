@@ -90,8 +90,11 @@ export {
   FIND_BAR_CLEAR_BUTTON_CLASS,
   FIND_BAR_INPUT_WITH_CLEAR_CLASS,
   FIND_BAR_INPUT_WRAP_CLASS,
+  FIND_BAR_INPUT_WRAP_STYLE,
   FIND_BAR_MATCH_COUNT_CLASS,
   FIND_BAR_MATCH_COUNT_STYLE,
+  FIND_BAR_ROOT_CLASS,
+  FIND_BAR_ROOT_STYLE,
 } from "./components/find-bar";
 
 // Component types only (not the implementations)
@@ -100,4 +103,10 @@ export type {
   PdfAnnotationViewerHandle,
   PdfAnnotationViewerProps,
 } from "./components/pdf-annotation-viewer";
+export type {
+  FindBarChromeProps,
+  FindBarControlledProps,
+  FindBarFindProps,
+  FindBarProps,
+} from "./components/find-bar";
 
