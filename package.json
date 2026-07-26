@@ -1,0 +1,23 @@
+{
+  "name": "doodl-workspace",
+  "version": "26.7.0",
+  "private": true,
+  "description": "Workspace for doodl packages and homepage app.",
+  "license": "LicenseRef-PolyForm-Perimeter-1.0.1",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "pnpm --filter doodl-web dev",
+    "build": "pnpm -r --filter './packages/*' build && pnpm --filter doodl-web build",
+    "build:packages": "pnpm -r --filter './packages/*' build",
+    "typecheck": "pnpm -r --filter './packages/*' typecheck && pnpm --filter doodl-web typecheck",
+    "test": "pnpm -r --filter './packages/*' test",
+    "check": "pnpm typecheck && pnpm test",
+    "release": "pnpm --filter @n-uf/doodl release && pnpm --filter @n-uf/doodl-react release && pnpm --filter @n-uf/doodl-pdf-react release && pnpm --filter @n-uf/doodl-go release"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
+  }
+}
