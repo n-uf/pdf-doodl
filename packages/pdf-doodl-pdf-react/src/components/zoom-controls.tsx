@@ -43,7 +43,7 @@ export interface ZoomControlsProps {
 }
 
 const DEFAULT_BUTTON_CLASS =
-  "px-2 py-1 text-xs border border-current/20 rounded-sm hover:bg-current/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
+  "inline-flex h-7 items-center justify-center px-2 text-xs border border-current/20 rounded-md hover:bg-current/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
 
 export function ZoomControls({
   viewport,

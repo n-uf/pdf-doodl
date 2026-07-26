@@ -12,6 +12,8 @@
  * Class tokens below are plain string constants. Host apps that use Tailwind
  * must `@source` this package (src or dist) so utilities like `w-[7ch]` are
  * generated — importing the constant alone does not keep classes from purge.
+ *
+ * Shared default control height is 28px (`h-7`) to align with ZoomControls.
  */
 
 import {
@@ -41,20 +43,21 @@ export interface FindBarProps {
 }
 
 const DEFAULT_BUTTON_CLASS =
-  "px-2 py-1 text-xs border border-current/20 rounded-sm hover:bg-current/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
+  "inline-flex h-7 items-center justify-center px-2 text-xs border border-current/20 rounded-md hover:bg-current/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
 
 /**
  * Fixed slot for match count (`999/999` / `0/0` / `…`). Always reserve this
  * width so the find strip does not shift when the count appears or grows.
  */
 export const FIND_BAR_MATCH_COUNT_CLASS =
-  "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap font-mono tabular-nums text-center";
+  "inline-flex h-7 w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums text-center";
 
 /** Purge-proof match-count slot — prefer `style={…}` over classes alone. */
 export const FIND_BAR_MATCH_COUNT_STYLE: CSSProperties = {
   boxSizing: "border-box",
   width: "7ch",
   minWidth: "7ch",
+  height: 28,
   flexShrink: 0,
   display: "inline-flex",
   alignItems: "center",
@@ -62,8 +65,6 @@ export const FIND_BAR_MATCH_COUNT_STYLE: CSSProperties = {
   whiteSpace: "nowrap",
   textAlign: "center",
   fontVariantNumeric: "tabular-nums",
-  fontFamily:
-    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
 };
 
 /** Purge-proof Aa toggle size. */
@@ -78,25 +79,30 @@ export const FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_STYLE: CSSProperties = {
   justifyContent: "center",
 };
 
-/** Relative wrapper for the find input + absolute clear control. */
-export const FIND_BAR_INPUT_WRAP_CLASS = "relative min-w-0 flex-1";
+/**
+ * Relative wrapper for the find input + absolute clear control.
+ * Flex + fixed height keeps the clear glyph vertically centered in the field.
+ */
+export const FIND_BAR_INPUT_WRAP_CLASS =
+  "relative flex h-7 min-w-0 flex-1 items-center";
 
 /** Right padding so typed text does not sit under the clear control. */
-export const FIND_BAR_INPUT_WITH_CLEAR_CLASS = "w-full pr-7";
+export const FIND_BAR_INPUT_WITH_CLEAR_CLASS = "w-full h-full pr-7";
 
 /**
- * Absolute clear (✕) inside the find input’s right edge. 24×24 hit target;
- * show only when `query.length > 0`.
+ * Absolute clear (✕) inside the find input’s right edge.
+ * `inset-y-0` + `my-auto` centers against the wrap height (not a flaky %).
+ * Show only when `query.length > 0`.
  */
 export const FIND_BAR_CLEAR_BUTTON_CLASS =
-  "absolute right-0.5 top-1/2 z-10 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-sm text-current/55 hover:bg-current/10 hover:text-current";
+  "absolute right-0.5 top-0 bottom-0 z-10 my-auto inline-flex h-5 w-5 items-center justify-center rounded-md text-current/55 hover:bg-current/10 hover:text-current";
 
 /**
- * Fixed square for the case-sensitive (Aa) toggle so ON fill / bold cannot
- * expand the control.
+ * Fixed square for the case-sensitive (Aa) toggle so ON fill cannot expand
+ * the control. Radius matches other toolbar chrome (`rounded-md`).
  */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_CLASS =
-  "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-xs";
+  "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs";
 
 /**
  * OFF: muted ghost outline only — no fill. Distinct from ON without relying
@@ -106,11 +112,12 @@ export const FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS =
   "bg-transparent text-current/55 border border-current/30 font-normal no-underline shadow-none";
 
 /**
- * ON (`aria-pressed=true`): solid filled + high-contrast text + underline.
+ * ON (`aria-pressed=true`): filled + high-contrast text.
  * Must remain readable as “on” without inspecting aria attributes.
+ * Avoid stacking underline+bold on top of a solid fill (reads garish).
  */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS =
-  "aria-pressed:bg-current aria-pressed:text-white aria-pressed:border-current aria-pressed:font-bold aria-pressed:underline aria-pressed:decoration-2 aria-pressed:underline-offset-2 aria-pressed:hover:bg-current aria-pressed:hover:text-white";
+  "aria-pressed:bg-current aria-pressed:text-white aria-pressed:border-current aria-pressed:font-semibold aria-pressed:hover:bg-current aria-pressed:hover:text-white";
 
 /** Full size + off/on styling — pair with a base button class (avoid text-muted). */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS = `${FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_CLASS} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_OFF_CLASS} ${FIND_BAR_CASE_SENSITIVE_TOGGLE_ON_CLASS}`;
@@ -118,9 +125,11 @@ export const FIND_BAR_CASE_SENSITIVE_TOGGLE_CLASS = `${FIND_BAR_CASE_SENSITIVE_T
 /**
  * Accent-token ON override when the host defines `--color-accent` / `accent`
  * and a contrasting `bg` (or `Canvas`) text color.
+ * Tonal fill (not solid accent slab) so ON stays obvious beside muted chrome
+ * without overpowering neighboring layer dots.
  */
 export const FIND_BAR_CASE_SENSITIVE_TOGGLE_ACCENT_ON_CLASS =
-  "aria-pressed:bg-accent aria-pressed:text-bg aria-pressed:border-accent aria-pressed:hover:bg-accent aria-pressed:hover:text-bg";
+  "aria-pressed:bg-accent/20 aria-pressed:text-accent aria-pressed:border-accent aria-pressed:hover:bg-accent/25 aria-pressed:hover:text-accent";
 
 export function FindBar({
   find,
@@ -189,7 +198,7 @@ export function FindBar({
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`px-2 py-1 text-xs border border-current/20 rounded-sm bg-transparent focus:outline-none ${FIND_BAR_INPUT_WITH_CLEAR_CLASS} ${inputClassName}`}
+          className={`box-border px-2 text-xs border border-current/20 rounded-md bg-transparent outline-none focus:border-current/45 ${FIND_BAR_INPUT_WITH_CLEAR_CLASS} ${inputClassName}`}
         />
         {hasQuery ? (
           <button

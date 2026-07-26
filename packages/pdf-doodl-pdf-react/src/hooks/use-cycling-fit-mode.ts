@@ -60,7 +60,7 @@ export function getPdfFitModeDescriptor(mode: PdfFitMode): PdfFitModeDescriptor 
  * Prefer {@link PDF_FIT_CYCLE_BUTTON_STYLE} when the host may purge Tailwind.
  */
 export const PDF_FIT_CYCLE_BUTTON_CLASS =
-  "inline-flex w-[12ch] shrink-0 items-center justify-center whitespace-nowrap";
+  "inline-flex h-7 w-[12ch] shrink-0 items-center justify-center whitespace-nowrap";
 
 /** Inner row; outer {@link PDF_FIT_CYCLE_BUTTON_CLASS} holds stable width. */
 export const PDF_FIT_CYCLE_LABEL_CLASS =
@@ -68,17 +68,18 @@ export const PDF_FIT_CYCLE_LABEL_CLASS =
 
 /**
  * Identical fixed square for zoom − / + so glyph width cannot skew the strip.
- * Pair with a chrome class; prefer `p-0` (or override padding) on the host.
+ * Shared toolbar control height is 28px (`h-7`) — pair with a chrome class;
+ * prefer `p-0` (or override padding) on the host.
  */
 export const PDF_ZOOM_STEP_BUTTON_CLASS =
-  "inline-flex size-6 shrink-0 items-center justify-center p-0";
+  "inline-flex size-7 shrink-0 items-center justify-center p-0";
 
 /**
  * Fixed width for zoom percent — sized for max label `"300%"` with padding.
  * Also set {@link PDF_ZOOM_PERCENT_BUTTON_STYLE} so purge cannot drop the lock.
  */
 export const PDF_ZOOM_PERCENT_BUTTON_CLASS =
-  "inline-flex w-[7ch] shrink-0 items-center justify-center whitespace-nowrap text-center font-mono tabular-nums";
+  "inline-flex h-7 w-[7ch] shrink-0 items-center justify-center whitespace-nowrap text-center tabular-nums";
 
 /** Longest zoom percent label this control is sized for (max scale 300%). */
 export const PDF_ZOOM_PERCENT_MAX_LABEL = "300%";
@@ -86,12 +87,13 @@ export const PDF_ZOOM_PERCENT_MAX_LABEL = "300%";
 /**
  * Purge-proof layout for the zoom percent control. Apply via `style={…}` —
  * does not depend on Tailwind scanning imported class-string constants.
- * Uses tabular + monospace so ##% and ###% share digit advance width.
+ * Tabular nums keep ##% / ###% stable without forcing a monospace face.
  */
 export const PDF_ZOOM_PERCENT_BUTTON_STYLE: CSSProperties = {
   boxSizing: "border-box",
   width: "7ch",
   minWidth: "7ch",
+  height: 28,
   flexShrink: 0,
   display: "inline-flex",
   alignItems: "center",
@@ -99,16 +101,14 @@ export const PDF_ZOOM_PERCENT_BUTTON_STYLE: CSSProperties = {
   whiteSpace: "nowrap",
   textAlign: "center",
   fontVariantNumeric: "tabular-nums",
-  fontFamily:
-    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
 };
 
-/** Purge-proof equal squares for zoom − / +. */
+/** Purge-proof equal squares for zoom − / + (shared 28px toolbar height). */
 export const PDF_ZOOM_STEP_BUTTON_STYLE: CSSProperties = {
   boxSizing: "border-box",
-  width: 24,
-  height: 24,
-  minWidth: 24,
+  width: 28,
+  height: 28,
+  minWidth: 28,
   padding: 0,
   flexShrink: 0,
   display: "inline-flex",
@@ -121,6 +121,7 @@ export const PDF_FIT_CYCLE_BUTTON_STYLE: CSSProperties = {
   boxSizing: "border-box",
   width: "12ch",
   minWidth: "12ch",
+  height: 28,
   flexShrink: 0,
   display: "inline-flex",
   alignItems: "center",
