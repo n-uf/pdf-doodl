@@ -18,6 +18,7 @@ export {
   useCyclingFitMode,
   getPdfFitModeDescriptor,
   nextPdfFitMode,
+  PDF_FIT_CYCLE_LABEL_CLASS,
   PDF_FIT_MODE_ORDER,
   usePdfFind,
 } from "./hooks";

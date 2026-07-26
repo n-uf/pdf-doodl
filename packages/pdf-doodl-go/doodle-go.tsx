@@ -20,6 +20,7 @@ import {
 } from "@n-uf/pdf-doodl";
 import {
   getAnnotationTextLayersByPage,
+  PDF_FIT_CYCLE_LABEL_CLASS,
   PDF_TEXT_LAYER_SELECTOR,
   useCyclingFitMode,
   usePdfFind,
@@ -1008,7 +1009,9 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                   title={`${fitDescriptor.title} — click to cycle`}
                   disabled={!canFitPdf}
                 >
-                  {fitDescriptor.icon} {fitDescriptor.label}
+                  <span className={PDF_FIT_CYCLE_LABEL_CLASS}>
+                    {fitDescriptor.icon} {fitDescriptor.label}
+                  </span>
                 </ToolbarButton>
 
                 {/* View mode toggle */}

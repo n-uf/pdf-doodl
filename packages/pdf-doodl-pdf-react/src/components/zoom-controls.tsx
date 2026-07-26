@@ -14,6 +14,7 @@
 
 import type { ReactElement } from "react";
 import {
+  PDF_FIT_CYCLE_LABEL_CLASS,
   useCyclingFitMode,
   type PdfFitMode,
 } from "../hooks/use-cycling-fit-mode";
@@ -89,7 +90,9 @@ export function ZoomControls({
           aria-label={`${descriptor.title} (click to cycle fit mode)`}
           className={buttonClass}
         >
-          {descriptor.icon} {descriptor.label}
+          <span className={PDF_FIT_CYCLE_LABEL_CLASS}>
+            {descriptor.icon} {descriptor.label}
+          </span>
         </button>
       )}
     </div>

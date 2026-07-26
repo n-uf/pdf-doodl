@@ -50,6 +50,10 @@ export function getPdfFitModeDescriptor(mode: PdfFitMode): PdfFitModeDescriptor 
   return FIT_MODE_DESCRIPTORS[mode];
 }
 
+/** Icon + space + longest label ("Height") — keeps cycle button width stable. */
+export const PDF_FIT_CYCLE_LABEL_CLASS =
+  "inline-flex min-w-[8ch] items-center justify-center";
+
 export function nextPdfFitMode(mode: PdfFitMode): PdfFitMode {
   const index = PDF_FIT_MODE_ORDER.indexOf(mode);
   const nextIndex = (index + 1) % PDF_FIT_MODE_ORDER.length;
