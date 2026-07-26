@@ -293,6 +293,7 @@ export function FindBar(props: FindBarProps): ReactElement {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const hasQuery = value.length > 0;
+  const hasActiveQuery = value.trim().length > 0;
   const hasMatches = matchCount > 0;
 
   useEffect(() => {
@@ -400,9 +401,9 @@ export function FindBar(props: FindBarProps): ReactElement {
           </button>
         ) : null}
       </div>
-      {showMatchCount && countLabel !== "" ? (
+      {showMatchCount && hasActiveQuery && countLabel !== "" ? (
         <span
-          style={FIND_BAR_MATCH_COUNT_STYLE}
+          style={unstyled ? undefined : FIND_BAR_MATCH_COUNT_STYLE}
           className={countClass}
           aria-live="polite"
         >
