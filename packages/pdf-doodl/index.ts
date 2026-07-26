@@ -360,7 +360,11 @@ export type {
 } from "./src/drivers";
 
 // Keyboard Driver
-export { KeyboardDriver, createKeyboardDriver } from "./src/drivers";
+export {
+  KeyboardDriver,
+  createKeyboardDriver,
+  isEditableKeyboardTarget,
+} from "./src/drivers";
 export type {
   KeyboardCommand,
   KeyboardDriverCallbacks,

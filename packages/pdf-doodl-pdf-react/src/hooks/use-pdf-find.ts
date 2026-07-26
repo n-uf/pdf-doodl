@@ -182,7 +182,7 @@ export function usePdfFind(options: UsePdfFindOptions): UsePdfFindReturn {
   const searchTokenRef = useRef(0);
 
   const runSearch = useCallback(
-    (searchQuery: string, searchPages: number[], ignoreCase: boolean) => {
+    (searchQuery: string, searchPages: number[], nextCaseSensitive: boolean) => {
       const token = ++searchTokenRef.current;
       if (searchQuery.trim().length === 0) {
         setPageMatches([]);
@@ -199,7 +199,7 @@ export function usePdfFind(options: UsePdfFindOptions): UsePdfFindReturn {
         const scale = getScaleRef.current(page);
         const found = findTextInTextLayer(searchQuery, layer, {
           scale,
-          ignoreCase: !ignoreCase,
+          ignoreCase: !nextCaseSensitive,
           maxMatches: maxMatchesPerPage,
         });
         if (found.length > 0) {

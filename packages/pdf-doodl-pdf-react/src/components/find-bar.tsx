@@ -28,6 +28,7 @@ import {
   useRef,
   type CSSProperties,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactElement,
 } from "react";
 import type { UsePdfFindReturn } from "../hooks/use-pdf-find";
@@ -321,6 +322,8 @@ export function FindBar(props: FindBarProps): ReactElement {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    // Keep find typing out of window-level canvas hotkeys (Backspace→delete).
+    event.stopPropagation();
     if (event.key === "Enter") {
       event.preventDefault();
       if (event.shiftKey) {
@@ -332,6 +335,11 @@ export function FindBar(props: FindBarProps): ReactElement {
       event.preventDefault();
       handleClear();
     }
+  };
+
+  /** Toolbar buttons must not steal focus from the find input. */
+  const retainInputFocus = (event: MouseEvent<HTMLButtonElement>): void => {
+    event.preventDefault();
   };
 
   const rootClass = joinClassNames(
@@ -392,6 +400,7 @@ export function FindBar(props: FindBarProps): ReactElement {
         {hasQuery ? (
           <button
             type="button"
+            onMouseDown={retainInputFocus}
             onClick={handleClear}
             title="Clear (Esc)"
             aria-label="Clear search"
@@ -412,6 +421,7 @@ export function FindBar(props: FindBarProps): ReactElement {
       ) : null}
       <button
         type="button"
+        onMouseDown={retainInputFocus}
         onClick={() => onPrev?.()}
         disabled={!hasMatches || onPrev === undefined}
         title="Previous match (Shift+Enter)"
@@ -421,6 +431,7 @@ export function FindBar(props: FindBarProps): ReactElement {
       </button>
       <button
         type="button"
+        onMouseDown={retainInputFocus}
         onClick={() => onNext?.()}
         disabled={!hasMatches || onNext === undefined}
         title="Next match (Enter)"
@@ -431,6 +442,7 @@ export function FindBar(props: FindBarProps): ReactElement {
       {showAa ? (
         <button
           type="button"
+          onMouseDown={retainInputFocus}
           onClick={() => onCaseSensitiveChange(!caseSensitive)}
           title={caseSensitive ? "Case-sensitive (on)" : "Case-sensitive (off)"}
           aria-label={

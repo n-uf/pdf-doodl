@@ -20,7 +20,11 @@ export type {
 // KEYBOARD DRIVER - Keyboard input handling
 // =============================================================================
 
-export { KeyboardDriver, createKeyboardDriver } from "./keyboard-driver";
+export {
+  KeyboardDriver,
+  createKeyboardDriver,
+  isEditableKeyboardTarget,
+} from "./keyboard-driver";
 export type {
   KeyboardCommand,
   KeyboardDriverCallbacks,
