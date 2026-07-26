@@ -50,9 +50,13 @@ export function getPdfFitModeDescriptor(mode: PdfFitMode): PdfFitModeDescriptor 
   return FIT_MODE_DESCRIPTORS[mode];
 }
 
-/** Icon + space + longest label ("Height") — keeps cycle button width stable. */
+/** Fixed width on the fit-cycle button (scales with button font-size via `ch`). */
+export const PDF_FIT_CYCLE_BUTTON_CLASS =
+  "inline-flex w-[10ch] shrink-0 items-center justify-center whitespace-nowrap";
+
+/** Inner row; outer {@link PDF_FIT_CYCLE_BUTTON_CLASS} holds stable width. */
 export const PDF_FIT_CYCLE_LABEL_CLASS =
-  "inline-flex min-w-[8ch] items-center justify-center";
+  "inline-flex items-center justify-center gap-0.5";
 
 export function nextPdfFitMode(mode: PdfFitMode): PdfFitMode {
   const index = PDF_FIT_MODE_ORDER.indexOf(mode);
