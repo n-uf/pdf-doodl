@@ -76,7 +76,7 @@ export const FIND_BAR_CLEAR_BUTTON_CLASS =
 
 /**
  * Match count (`999/999` / `0/0` / `…`). Fixed width when visible; hidden
- * when there is no query so the strip stays packed (input · ↑↓ · Aa).
+ * when there is no query so the strip stays packed (Aa · input · count · ↑↓).
  */
 export const FIND_BAR_MATCH_COUNT_CLASS =
   "inline-flex h-7 w-[7ch] shrink-0 items-center justify-center whitespace-nowrap tabular-nums text-center";
@@ -383,6 +383,22 @@ export function FindBar(props: FindBarProps): ReactElement {
       style={unstyled ? FIND_BAR_ROOT_STYLE : undefined}
       role="search"
     >
+      {showAa ? (
+        <button
+          type="button"
+          onMouseDown={retainInputFocus}
+          onClick={() => onCaseSensitiveChange(!caseSensitive)}
+          title={caseSensitive ? "Case-sensitive (on)" : "Case-sensitive (off)"}
+          aria-label={
+            caseSensitive ? "Case-sensitive: on" : "Case-sensitive: off"
+          }
+          aria-pressed={caseSensitive}
+          style={FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_STYLE}
+          className={aaButtonClass}
+        >
+          Aa
+        </button>
+      ) : null}
       <div
         className={wrapClass}
         style={unstyled ? FIND_BAR_INPUT_WRAP_STYLE : undefined}
@@ -439,22 +455,6 @@ export function FindBar(props: FindBarProps): ReactElement {
       >
         ↓
       </button>
-      {showAa ? (
-        <button
-          type="button"
-          onMouseDown={retainInputFocus}
-          onClick={() => onCaseSensitiveChange(!caseSensitive)}
-          title={caseSensitive ? "Case-sensitive (on)" : "Case-sensitive (off)"}
-          aria-label={
-            caseSensitive ? "Case-sensitive: on" : "Case-sensitive: off"
-          }
-          aria-pressed={caseSensitive}
-          style={FIND_BAR_CASE_SENSITIVE_TOGGLE_SIZE_STYLE}
-          className={aaButtonClass}
-        >
-          Aa
-        </button>
-      ) : null}
     </div>
   );
 }
