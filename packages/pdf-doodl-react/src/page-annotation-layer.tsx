@@ -16,10 +16,14 @@ import "./styles/text-layer.css";
 import {
   getShapeCreationBehavior,
   getToolTargetShape,
+  registerBuiltinShapes,
   type DrawShape,
   type DrawTool,
   type ShapeStyle,
 } from "@n-uf/pdf-doodl";
+
+// Annotation viewers always need first-party shape modules (rect, etc.).
+registerBuiltinShapes();
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { annotationCanvasPool } from "./canvas-pool";
 import {

@@ -145,4 +145,4 @@ export type {
   ShapeStyle,
 } from "@n-uf/pdf-doodl";
 
-export { DEFAULT_SHAPE_STYLE } from "@n-uf/pdf-doodl";
+export { DEFAULT_SHAPE_STYLE, registerBuiltinShapes } from "@n-uf/pdf-doodl";

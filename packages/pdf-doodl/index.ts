@@ -5,6 +5,11 @@
  * rendering, hit-testing, handlers, and movement logic.
  */
 
+// Register first-party shapes before any consumer can call setShapes/getShapeModule.
+import { registerBuiltinShapes } from "./src/shapes/register-builtins";
+registerBuiltinShapes();
+export { registerBuiltinShapes } from "./src/shapes/register-builtins";
+
 // =============================================================================
 // TYPES
 // =============================================================================

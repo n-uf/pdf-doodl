@@ -2,6 +2,8 @@
  * Shapes module - Re-export catalog
  */
 
+export { registerBuiltinShapes } from "./register-builtins";
+
 // =============================================================================
 // COMMON (types, utils, registry, dispatch, controllers)
 // =============================================================================

@@ -9,11 +9,20 @@
  * - Text layer capture for text-highlight tool
  */
 
-import type { DrawShape, DrawTool, ShapeStyle } from "@n-uf/pdf-doodl";
+import {
+  registerBuiltinShapes,
+  type DrawShape,
+  type DrawTool,
+  type ShapeStyle,
+} from "@n-uf/pdf-doodl";
 import {
   PageAnnotationLayer,
   type PageAnnotationController,
 } from "@n-uf/pdf-doodl-react";
+
+// PdfAnnotationPage is a common exclusive import path — keep shapes registered
+// even when consumers never import from @n-uf/pdf-doodl directly.
+registerBuiltinShapes();
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Page } from "react-pdf";
 import type { PageDimensions, PageRenderResult } from "../types";

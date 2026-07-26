@@ -4,6 +4,10 @@
  * Shape-centric architecture with unified exports.
  */
 
+import { registerBuiltinShapes } from "./shapes/register-builtins";
+registerBuiltinShapes();
+export { registerBuiltinShapes } from "./shapes/register-builtins";
+
 // =============================================================================
 // TYPES
 // =============================================================================
