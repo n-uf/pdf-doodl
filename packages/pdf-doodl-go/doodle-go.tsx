@@ -21,6 +21,7 @@ import {
 import {
   getAnnotationTextLayersByPage,
   PDF_TEXT_LAYER_SELECTOR,
+  useCyclingFitMode,
   usePdfFind,
   usePdfViewportScale,
 } from "@n-uf/pdf-doodl-pdf-react";
@@ -225,18 +226,21 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       width: number;
       height: number;
     } | null>(null);
+    const pdfViewport = usePdfViewportScale({
+      pageSize: pdfDimensions,
+      containerRef: canvasContainerRef,
+    });
     const {
       scale: pdfScale,
       zoomIn: handleZoomIn,
       zoomOut: handleZoomOut,
       resetZoom: handleZoomReset,
-      fitWidth: handleFitWidth,
-      fitHeight: handleFitHeight,
-      fitPage: handleFitPage,
-    } = usePdfViewportScale({
-      pageSize: pdfDimensions,
-      containerRef: canvasContainerRef,
-    });
+    } = pdfViewport;
+    const {
+      descriptor: fitDescriptor,
+      canFit: canFitPdf,
+      cycleFit: handleCycleFit,
+    } = useCyclingFitMode(pdfViewport);
     const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
     const [pdfTotalPages, setPdfTotalPages] = useState(0);
     const [pdfViewMode, setPdfViewMode] = useState<PdfViewMode>("exploded");
@@ -997,29 +1001,14 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                   +
                 </ToolbarButton>
                 <ToolbarButton
-                  onClick={handleFitWidth}
-                  tokens={t}
-                  isDark={isDark}
-                  title="Fit width"
-                >
-                  ↔
-                </ToolbarButton>
-                <ToolbarButton
-                  onClick={handleFitHeight}
-                  tokens={t}
-                  isDark={isDark}
-                  title="Fit height"
-                >
-                  ↕
-                </ToolbarButton>
-                <ToolbarButton
-                  onClick={handleFitPage}
+                  onClick={handleCycleFit}
                   tokens={t}
                   isDark={isDark}
                   className="mr-2"
-                  title="Fit page"
+                  title={`${fitDescriptor.title} — click to cycle`}
+                  disabled={!canFitPdf}
                 >
-                  ⬚
+                  {fitDescriptor.icon} {fitDescriptor.label}
                 </ToolbarButton>
 
                 {/* View mode toggle */}

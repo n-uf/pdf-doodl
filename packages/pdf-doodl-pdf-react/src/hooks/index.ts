@@ -11,6 +11,17 @@ export {
   type UsePdfViewportScaleReturn,
 } from "./use-pdf-viewport-scale";
 export {
+  useCyclingFitMode,
+  getPdfFitModeDescriptor,
+  nextPdfFitMode,
+  PDF_FIT_MODE_ORDER,
+  type CyclingFitViewport,
+  type PdfFitMode,
+  type PdfFitModeDescriptor,
+  type UseCyclingFitModeOptions,
+  type UseCyclingFitModeReturn,
+} from "./use-cycling-fit-mode";
+export {
   usePdfFind,
   type FindMatchRef,
   type UsePdfFindOptions,

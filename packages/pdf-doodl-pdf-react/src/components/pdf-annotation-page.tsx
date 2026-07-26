@@ -7,6 +7,13 @@
  * - react-pdf Page component for PDF rendering
  * - PageAnnotationLayer from doodl-react for annotation canvas
  * - Text layer capture for text-highlight tool
+ *
+ * Text-layer CSS: react-pdf's `TextLayer.css` is imported here so every
+ * consumer gets invisible-but-selectable text (`color: transparent`) and
+ * absolute positioning (`inset: 0`) matching the PDF canvas. Without it,
+ * spans paint as a mis-scaled ghost layer and annotation overlays diverge.
+ * `@n-uf/pdf-doodl-react`'s text-layer.css (font-size / --total-scale-factor)
+ * is pulled in via PageAnnotationLayer.
  */
 
 import {
@@ -26,6 +33,8 @@ import {
 registerBuiltinShapes();
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Page } from "react-pdf";
+// Side-effect: transparent, page-sized text layer for find/selection.
+import "react-pdf/dist/Page/TextLayer.css";
 import type { PageDimensions, PageRenderResult } from "../types";
 
 // =============================================================================

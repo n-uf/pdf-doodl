@@ -15,6 +15,10 @@ export {
   usePdfTextLayer,
   usePdfTextLayerAuto,
   usePdfViewportScale,
+  useCyclingFitMode,
+  getPdfFitModeDescriptor,
+  nextPdfFitMode,
+  PDF_FIT_MODE_ORDER,
   usePdfFind,
 } from "./hooks";
 
@@ -52,6 +56,11 @@ export type {
   PdfPageSize,
   UsePdfViewportScaleOptions,
   UsePdfViewportScaleReturn,
+  CyclingFitViewport,
+  PdfFitMode,
+  PdfFitModeDescriptor,
+  UseCyclingFitModeOptions,
+  UseCyclingFitModeReturn,
   FindMatchRef,
   UsePdfFindOptions,
   UsePdfFindReturn,

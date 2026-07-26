@@ -5,11 +5,18 @@
  *
  * A minimal, unopinionated zoom/fit control strip. Consumers who want fully
  * custom chrome (matching their own design tokens) should use
- * `usePdfViewportScale` directly instead — this component exists so simple
- * integrations don't have to hand-roll buttons.
+ * `usePdfViewportScale` / `useCyclingFitMode` directly instead — this
+ * component exists so simple integrations don't have to hand-roll buttons.
+ *
+ * Fit is a single cycling control: width → height → page → width. Each click
+ * applies the displayed mode and advances the label to the next.
  */
 
 import type { ReactElement } from "react";
+import {
+  useCyclingFitMode,
+  type PdfFitMode,
+} from "../hooks/use-cycling-fit-mode";
 import type { UsePdfViewportScaleReturn } from "../hooks/use-pdf-viewport-scale";
 
 export interface ZoomControlsProps {
@@ -21,12 +28,10 @@ export interface ZoomControlsProps {
   buttonClassName?: string;
   /** Additional className for the percentage label */
   labelClassName?: string;
-  /** Show the fit-width button (default: true) */
-  showFitWidth?: boolean;
-  /** Show the fit-height button (default: true) */
-  showFitHeight?: boolean;
-  /** Show the fit-page button (default: true) */
-  showFitPage?: boolean;
+  /** Show the cycling fit control (default: true) */
+  showFit?: boolean;
+  /** Mode shown (and applied) on the first fit click. Default: `"width"`. */
+  initialFitMode?: PdfFitMode;
 }
 
 const DEFAULT_BUTTON_CLASS =
@@ -37,22 +42,13 @@ export function ZoomControls({
   className = "",
   buttonClassName = "",
   labelClassName = "",
-  showFitWidth = true,
-  showFitHeight = true,
-  showFitPage = true,
+  showFit = true,
+  initialFitMode = "width",
 }: ZoomControlsProps): ReactElement {
-  const {
-    scale,
-    zoomIn,
-    zoomOut,
-    resetZoom,
-    fitWidth,
-    fitHeight,
-    fitPage,
-    canFit,
-    atMinZoom,
-    atMaxZoom,
-  } = viewport;
+  const { scale, zoomIn, zoomOut, resetZoom, atMinZoom, atMaxZoom } = viewport;
+  const { descriptor, canFit, cycleFit } = useCyclingFitMode(viewport, {
+    initialMode: initialFitMode,
+  });
 
   const buttonClass = `${DEFAULT_BUTTON_CLASS} ${buttonClassName}`;
 
@@ -84,37 +80,16 @@ export function ZoomControls({
       >
         +
       </button>
-      {showFitWidth && (
+      {showFit && (
         <button
           type="button"
-          onClick={fitWidth}
+          onClick={cycleFit}
           disabled={!canFit}
-          title="Fit width"
+          title={`${descriptor.title} — click to cycle`}
+          aria-label={`${descriptor.title} (click to cycle fit mode)`}
           className={buttonClass}
         >
-          ↔ Width
-        </button>
-      )}
-      {showFitHeight && (
-        <button
-          type="button"
-          onClick={fitHeight}
-          disabled={!canFit}
-          title="Fit height"
-          className={buttonClass}
-        >
-          ↕ Height
-        </button>
-      )}
-      {showFitPage && (
-        <button
-          type="button"
-          onClick={fitPage}
-          disabled={!canFit}
-          title="Fit page"
-          className={buttonClass}
-        >
-          ⬚ Page
+          {descriptor.icon} {descriptor.label}
         </button>
       )}
     </div>

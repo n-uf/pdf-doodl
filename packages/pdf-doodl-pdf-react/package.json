@@ -50,7 +50,13 @@
     "dist",
     "CHANGELOG.md"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css",
+    "**/pdf-annotation-page.tsx",
+    "**/pdf-annotation-page.js",
+    "**/pdf-annotation-page.mjs",
+    "**/pdf-annotation-page.cjs"
+  ],
   "scripts": {
     "build": "tsup",
     "check": "pnpm typecheck",
