@@ -37,7 +37,14 @@ export {
   REDACT_HIGHLIGHT_STYLE,
   REDACT_ZONE_STYLE,
 } from "./src/types/style";
-export type { BlendMode, ShapeStyle } from "./src/types/style";
+export type {
+  BlendMode,
+  ShapeOutline,
+  ShapeOutlineGlow,
+  ShapeShadow,
+  ShapeStyle,
+  StrokeAlign,
+} from "./src/types/style";
 
 // Behavior
 export {

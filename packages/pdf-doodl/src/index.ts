@@ -23,7 +23,14 @@ export {
   REDACT_HIGHLIGHT_STYLE,
   REDACT_ZONE_STYLE,
 } from "./types/style";
-export type { BlendMode, ShapeStyle } from "./types/style";
+export type {
+  BlendMode,
+  ShapeOutline,
+  ShapeOutlineGlow,
+  ShapeShadow,
+  ShapeStyle,
+  StrokeAlign,
+} from "./types/style";
 
 // Input
 export { DEFAULT_MODIFIERS } from "./types/input";

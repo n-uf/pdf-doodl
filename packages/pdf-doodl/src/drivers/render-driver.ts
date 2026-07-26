@@ -29,6 +29,8 @@ import {
   shapeSupportsEditMode,
   type ShapeEditState,
 } from "../shapes";
+import { runWithShapeRenderContext } from "../shapes/common/utils/render-context";
+import { styleRenderPadding } from "../shapes/common/utils/stroke";
 import type { Bounds, DrawShape } from "../types";
 import type {
   ImageSmoothingMode,
@@ -329,8 +331,7 @@ export class RenderDriver {
     }
 
     const bounds = getShapeBounds(shape);
-    // Add extra padding for stroke width
-    const padding = (shape.style.strokeWidth ?? 2) + 4;
+    const padding = styleRenderPadding(shape.style, this._scale);
     this._dirtyRectManager.markDirty(bounds, padding);
     this._needsRender = true;
   }
@@ -471,48 +472,56 @@ export class RenderDriver {
       ? shapes
       : this._filterShapesToDirtyRegions(shapes, dirtyRegions);
 
-    // Render shapes with behavior-aware sorting and styling
-    renderShapesWithBehavior(ctx, shapesToRender);
+    runWithShapeRenderContext(
+      {
+        enablePixelSnapping: this._enablePixelSnapping,
+        scale: this._scale,
+      },
+      () => {
+        // Render shapes with behavior-aware sorting and styling
+        renderShapesWithBehavior(ctx, shapesToRender);
 
-    // Render preview (always uses normal style)
-    if (previewShape) {
-      const shouldRenderPreview =
-        isFullRedraw ||
-        this._shapeIntersectsDirty(previewShape, dirtyRegions);
-      if (shouldRenderPreview) {
-        renderShapesWithBehavior(ctx, [previewShape]);
-      }
-    }
+        // Render preview (always uses normal style)
+        if (previewShape) {
+          const shouldRenderPreview =
+            isFullRedraw ||
+            this._shapeIntersectsDirty(previewShape, dirtyRegions);
+          if (shouldRenderPreview) {
+            renderShapesWithBehavior(ctx, [previewShape]);
+          }
+        }
 
-    // Check if in edit mode (delegated to shape module)
-    if (editState) {
-      const editingShape = shapes.find((s) => s.id === editState.shapeId);
-      if (editingShape && shapeSupportsEditMode(editingShape)) {
-        const shouldRenderEdit =
-          isFullRedraw ||
-          this._shapeIntersectsDirty(editingShape, dirtyRegions);
-        if (shouldRenderEdit) {
-          // Delegated to shape module - render driver is shape-agnostic
-          renderShapeEditMode(ctx, editingShape, editState);
+        // Check if in edit mode (delegated to shape module)
+        if (editState) {
+          const editingShape = shapes.find((s) => s.id === editState.shapeId);
+          if (editingShape && shapeSupportsEditMode(editingShape)) {
+            const shouldRenderEdit =
+              isFullRedraw ||
+              this._shapeIntersectsDirty(editingShape, dirtyRegions);
+            if (shouldRenderEdit) {
+              // Delegated to shape module - render driver is shape-agnostic
+              renderShapeEditMode(ctx, editingShape, editState);
+            }
+          }
+        } else if (!this._stateProvider.isReadOnly?.()) {
+          // Render selection UI (delegated to shape modules).
+          // Skipped in readOnly — consumers style selection via shape props.
+          const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
+          for (const shape of selectedShapes) {
+            const shouldRenderSelection =
+              isFullRedraw || this._shapeIntersectsDirty(shape, dirtyRegions);
+            if (shouldRenderSelection) {
+              renderShapeSelection(ctx, shape);
+            }
+          }
+        }
+
+        // Render ephemeral ping effects (post-pass, on top of everything)
+        if (this._renderPingEffects(ctx, shapes)) {
+          this._needsRender = true;
         }
       }
-    } else if (!this._stateProvider.isReadOnly?.()) {
-      // Render selection UI (delegated to shape modules).
-      // Skipped in readOnly — consumers style selection via shape props.
-      const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
-      for (const shape of selectedShapes) {
-        const shouldRenderSelection =
-          isFullRedraw || this._shapeIntersectsDirty(shape, dirtyRegions);
-        if (shouldRenderSelection) {
-          renderShapeSelection(ctx, shape);
-        }
-      }
-    }
-
-    // Render ephemeral ping effects (post-pass, on top of everything)
-    if (this._renderPingEffects(ctx, shapes)) {
-      this._needsRender = true;
-    }
+    );
 
     ctx.restore();
   }

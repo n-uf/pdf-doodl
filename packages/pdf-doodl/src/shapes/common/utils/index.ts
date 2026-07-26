@@ -14,12 +14,33 @@ export {
   GPU_OPTIMIZED_CONTEXT_OPTIONS,
   mapBlendMode,
   resetStyle,
+  snapRectToDevicePixels,
   snapRectToPixel,
   snapToPixel,
   snapToPixelFloor,
 } from "./canvas";
 
 export type { CanvasContextOptions } from "./canvas";
+export type { RectGeom } from "./stroke";
+export type { ShapeRenderContext } from "./render-context";
+
+// Stroke / screen-space / alignment
+export {
+  alignedEllipseRadii,
+  alignedStrokeRect,
+  applyShapeShadow,
+  applyStrokePaint,
+  inflateRect,
+  resolveStyleLength,
+  styleRenderPadding,
+} from "./stroke";
+
+// Per-frame render context
+export {
+  getShapeRenderContext,
+  runWithShapeRenderContext,
+  setShapeRenderContext,
+} from "./render-context";
 
 // Geometry
 export {

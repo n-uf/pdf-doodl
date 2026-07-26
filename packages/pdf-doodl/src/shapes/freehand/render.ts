@@ -4,6 +4,12 @@
 
 import type { FreehandShape } from "../../types";
 import { mapBlendMode } from "../common/utils/canvas";
+import { getShapeRenderContext } from "../common/utils/render-context";
+import {
+  applyShapeShadow,
+  applyStrokePaint,
+  resolveStyleLength,
+} from "../common/utils/stroke";
 
 /**
  * Render a freehand path
@@ -15,6 +21,16 @@ export function renderFreehand(
   if (freehand.points.length < 2) return;
 
   ctx.save();
+
+  const renderContext = getShapeRenderContext();
+  const style = freehand.style;
+  const scale = renderContext.scale;
+  const screenSpace = style.screenSpaceStroke ?? false;
+  const strokeWidth = resolveStyleLength(
+    style.strokeWidth ?? 2,
+    screenSpace,
+    scale
+  );
 
   ctx.beginPath();
   ctx.moveTo(freehand.points[0]!.x, freehand.points[0]!.y);
@@ -36,30 +52,26 @@ export function renderFreehand(
     ctx.closePath();
   }
 
+  applyShapeShadow(ctx, style.shadow);
+
   // Fill (only if closed)
-  if (
-    freehand.closed &&
-    freehand.style.fill &&
-    freehand.style.fill !== "none"
-  ) {
-    ctx.fillStyle = freehand.style.fill;
-    ctx.globalAlpha = freehand.style.fillOpacity ?? 1;
-    if (freehand.style.blendMode) {
-      ctx.globalCompositeOperation = mapBlendMode(freehand.style.blendMode);
+  if (freehand.closed && style.fill && style.fill !== "none") {
+    ctx.fillStyle = style.fill;
+    ctx.globalAlpha = style.fillOpacity ?? 1;
+    if (style.blendMode) {
+      ctx.globalCompositeOperation = mapBlendMode(style.blendMode);
     }
     ctx.fill();
   }
 
-  // Stroke
-  if (freehand.style.stroke && freehand.style.stroke !== "none") {
-    ctx.strokeStyle = freehand.style.stroke;
-    ctx.lineWidth = freehand.style.strokeWidth ?? 2;
-    ctx.globalAlpha = freehand.style.strokeOpacity ?? 1;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    if (freehand.style.strokeDash) {
-      ctx.setLineDash(freehand.style.strokeDash);
-    }
+  // Stroke (defaults keep the historical round pen look)
+  if (style.stroke && style.stroke !== "none" && strokeWidth > 0) {
+    ctx.strokeStyle = style.stroke;
+    ctx.globalAlpha = style.strokeOpacity ?? 1;
+    applyStrokePaint(ctx, style, strokeWidth, scale, {
+      lineCap: "round",
+      lineJoin: "round",
+    });
     ctx.stroke();
   }
 
