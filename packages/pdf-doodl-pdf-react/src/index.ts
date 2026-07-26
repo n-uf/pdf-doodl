@@ -14,6 +14,8 @@ export {
   usePdfAnnotations,
   usePdfTextLayer,
   usePdfTextLayerAuto,
+  usePdfViewportScale,
+  usePdfFind,
 } from "./hooks";
 
 // Utilities (SSR-safe - guard for document internally)
@@ -44,6 +46,16 @@ export type {
   UsePdfAnnotationsReturn,
   UsePdfTextLayerReturn,
 } from "./types";
+
+// Zoom/fit + find types (SSR-safe)
+export type {
+  PdfPageSize,
+  UsePdfViewportScaleOptions,
+  UsePdfViewportScaleReturn,
+  FindMatchRef,
+  UsePdfFindOptions,
+  UsePdfFindReturn,
+} from "./hooks";
 
 // Component types only (not the implementations)
 export type { PdfAnnotationPageProps } from "./components/pdf-annotation-page";

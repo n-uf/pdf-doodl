@@ -11,12 +11,20 @@ import {
   DEFAULT_MARKER_SETTINGS,
   DEFAULT_SHAPE_STYLE,
   DEFAULT_TEXT_HIGHLIGHT_STYLE,
+  resolveBehavior,
   setMarkerSettings,
   type DrawShape,
   type DrawTool,
   type MarkerSettings,
   type ShapeStyle,
 } from "@n-uf/pdf-doodl";
+import {
+  getAnnotationTextLayersByPage,
+  PDF_TEXT_LAYER_SELECTOR,
+  usePdfFind,
+  usePdfViewportScale,
+} from "@n-uf/pdf-doodl-pdf-react";
+import { FindBar } from "@n-uf/pdf-doodl-pdf-react/components";
 import {
   Doodl,
   PageAnnotationController,
@@ -28,6 +36,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -216,10 +225,86 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       width: number;
       height: number;
     } | null>(null);
-    const [pdfScale, setPdfScale] = useState(1);
+    const {
+      scale: pdfScale,
+      zoomIn: handleZoomIn,
+      zoomOut: handleZoomOut,
+      resetZoom: handleZoomReset,
+      fitWidth: handleFitWidth,
+      fitHeight: handleFitHeight,
+      fitPage: handleFitPage,
+    } = usePdfViewportScale({
+      pageSize: pdfDimensions,
+      containerRef: canvasContainerRef,
+    });
     const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
     const [pdfTotalPages, setPdfTotalPages] = useState(0);
     const [pdfViewMode, setPdfViewMode] = useState<PdfViewMode>("exploded");
+    const [showFindBar, setShowFindBar] = useState(false);
+
+    // Find-in-PDF: searches whichever pages are currently mounted — the
+    // current page in "single" mode, all pages in "exploded" (scroll) mode
+    // (PdfContent renders every page there, no virtualization yet).
+    const findPages = useMemo(
+      () =>
+        pdfViewMode === "single"
+          ? [pdfCurrentPage]
+          : Array.from({ length: pdfTotalPages }, (_, i) => i + 1),
+      [pdfViewMode, pdfCurrentPage, pdfTotalPages]
+    );
+    const getFindTextLayer = useCallback(
+      (page: number): HTMLElement | null => {
+        const container = canvasContainerRef.current;
+        if (!container) return null;
+        const layers = getAnnotationTextLayersByPage(
+          PDF_TEXT_LAYER_SELECTOR,
+          container
+        );
+        return layers.get(page) ?? null;
+      },
+      []
+    );
+    const getFindScale = useCallback(() => pdfScale, [pdfScale]);
+    const pdfFind = usePdfFind({
+      pages: findPages,
+      getTextLayer: getFindTextLayer,
+      getScale: getFindScale,
+    });
+
+    // Locate the active find match: switch to its page in single mode (ping
+    // fires once the page swap lands, below), or scroll it into view in
+    // exploded mode. v1 limitation: exploded mode scrolls but doesn't ping
+    // (no per-page controller map is threaded through PdfContent yet).
+    useEffect(() => {
+      if (mode !== "pdf" || !pdfFind.activeMatch) return;
+      if (
+        pdfViewMode === "single" &&
+        pdfFind.activeMatch.page !== pdfCurrentPage
+      ) {
+        setPdfCurrentPage(pdfFind.activeMatch.page);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per locateToken bump
+    }, [pdfFind.locateToken]);
+
+    useEffect(() => {
+      if (mode !== "pdf" || !pdfFind.activeMatch) return;
+      const container = canvasContainerRef.current;
+      if (!container) return;
+
+      if (pdfViewMode === "single") {
+        if (pdfFind.activeMatch.page !== pdfCurrentPage) return;
+        pdfControllerRef.current?.ping(pdfFind.activeMatch.shapeId, {
+          type: "locateFlash",
+        });
+        return;
+      }
+
+      const pageEl = container.querySelector<HTMLElement>(
+        `[data-page-number="${pdfFind.activeMatch.page}"]`
+      );
+      pageEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per locateToken bump (+ page landing in single mode)
+    }, [pdfFind.locateToken, pdfCurrentPage, mode, pdfViewMode]);
 
     // Canvas dimensions - responsive to container, snapped to grid
     const GRID_SIZE = 40;
@@ -490,8 +575,14 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
     );
 
     // Shapes change handler (PDF) - receives shapes for current page
+    // Strips ephemeral overlays (e.g. find-match highlights, behavior.persisted
+    // === false) before they touch shape counts, the explorer, or state JSON —
+    // those are render-only decorations, never real annotations.
     const handlePdfShapesChange = useCallback(
-      (shapes: DrawShape[]) => {
+      (rawShapes: DrawShape[]) => {
+        const shapes = rawShapes.filter(
+          (shape) => resolveBehavior(shape.behavior).persisted
+        );
         // Get total count across all pages
         const allShapes = getAllPdfShapesFlat();
         // Update current page shapes in the count
@@ -600,9 +691,14 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       setPdfCurrentPage(1);
     }, []);
 
-    // Handle annotations change for a specific page
+    // Handle annotations change for a specific page.
+    // Strips ephemeral overlays (find-match highlights, etc.) so they never
+    // get persisted into real page annotations — see handlePdfShapesChange.
     const handlePdfAnnotationsChange = useCallback(
-      (page: number, shapes: DrawShape[]) => {
+      (page: number, rawShapes: DrawShape[]) => {
+        const shapes = rawShapes.filter(
+          (shape) => resolveBehavior(shape.behavior).persisted
+        );
         setPdfPageAnnotations(page, shapes);
       },
       [setPdfPageAnnotations]
@@ -625,40 +721,6 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         navigator.clipboard.writeText(json);
       }
     }, [mode, pdfTotalPages, pdfAnnotations]);
-
-    // PDF zoom handlers
-    const handleZoomIn = useCallback(() => {
-      setPdfScale((prev) => Math.min(prev + 0.25, 3));
-    }, []);
-
-    const handleZoomOut = useCallback(() => {
-      setPdfScale((prev) => Math.max(prev - 0.25, 0.5));
-    }, []);
-
-    const handleZoomReset = useCallback(() => {
-      setPdfScale(1);
-    }, []);
-
-    // Fit-width: calculates scale to fit PDF width in viewport
-    const handleFitWidth = useCallback(() => {
-      if (!pdfDimensions) return;
-      // Approximate available width (main area minus padding)
-      const availableWidth = window.innerWidth - 400; // sidebar + margins
-      const fitScale = availableWidth / pdfDimensions.width;
-      setPdfScale(Math.max(0.5, Math.min(fitScale, 3)));
-    }, [pdfDimensions]);
-
-    // Fit-page: calculates scale to fit entire PDF page in viewport
-    const handleFitPage = useCallback(() => {
-      if (!pdfDimensions) return;
-      // Approximate available dimensions
-      const availableWidth = window.innerWidth - 400;
-      const availableHeight = window.innerHeight - 250; // header + status + margins
-      const scaleX = availableWidth / pdfDimensions.width;
-      const scaleY = availableHeight / pdfDimensions.height;
-      const fitScale = Math.min(scaleX, scaleY);
-      setPdfScale(Math.max(0.5, Math.min(fitScale, 3)));
-    }, [pdfDimensions]);
 
     // Marker setting update
     const updateMarkerSetting = useCallback(
@@ -943,6 +1005,14 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                   ↔
                 </ToolbarButton>
                 <ToolbarButton
+                  onClick={handleFitHeight}
+                  tokens={t}
+                  isDark={isDark}
+                  title="Fit height"
+                >
+                  ↕
+                </ToolbarButton>
+                <ToolbarButton
                   onClick={handleFitPage}
                   tokens={t}
                   isDark={isDark}
@@ -968,6 +1038,22 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                   }
                 >
                   {pdfViewMode === "single" ? "≡" : "□"}
+                </ToolbarButton>
+
+                {/* Find toggle */}
+                <ToolbarButton
+                  onClick={() => {
+                    setShowFindBar((prev) => {
+                      if (prev) pdfFind.clear();
+                      return !prev;
+                    });
+                  }}
+                  tokens={t}
+                  isDark={isDark}
+                  className="mr-2"
+                  title="Find in document"
+                >
+                  ⌕ FIND
                 </ToolbarButton>
 
                 {/* Open PDF button */}
@@ -1047,6 +1133,19 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         </Header>
 
         <div className="relative flex flex-1 min-h-0 pb-8">
+          {/* Find bar - floats over the PDF canvas area */}
+          {mode === "pdf" && showFindBar && (
+            <div
+              className={`absolute top-2 right-2 z-40 px-2 py-1.5 ${t.surface} border ${t.border} shadow-lg ${t.textDim}`}
+            >
+              <FindBar
+                find={pdfFind}
+                placeholder="Find in PDF…"
+                inputClassName={t.input}
+              />
+            </div>
+          )}
+
           {/* Tool sidebar */}
           <ToolSidebar
             tools={TOOL_DEFINITIONS}
@@ -1233,6 +1332,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                       onDimensionsChange={setPdfDimensions}
                       onPdfLoad={handlePdfLoad}
                       mergeHighlights={mergeHighlights}
+                      getOverlayShapesForPage={pdfFind.getShapesForPage}
                     />
                   </CanvasFrame>
                 </div>
