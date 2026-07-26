@@ -2,9 +2,9 @@
 
 @import "tailwindcss";
 @source "../**/*.{ts,tsx}";
-@source "../../../packages/doodl/**/*.{ts,tsx}";
-@source "../../../packages/doodl-go/**/*.{ts,tsx}";
-@source "../../../packages/doodl-react/**/*.{ts,tsx}";
+@source "../../../packages/pdf-doodl/**/*.{ts,tsx}";
+@source "../../../packages/pdf-doodl-go/**/*.{ts,tsx}";
+@source "../../../packages/pdf-doodl-react/**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -47,5 +47,5 @@ body {
   background: rgba(251, 191, 36, 0.3);
 }
 
-/* PDF Text Layer styles are now provided by @n-uf/doodl-pdf-react */
+/* PDF Text Layer styles are now provided by @n-uf/pdf-doodl-pdf-react */
 

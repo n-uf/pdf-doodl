@@ -1,4 +1,4 @@
-import type { DrawShape } from "@n-uf/doodl";
+import type { DrawShape } from "@n-uf/pdf-doodl";
 
 /**
  * Export shapes to JSON string

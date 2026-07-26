@@ -10,15 +10,15 @@ importers:
 
   apps/web:
     dependencies:
-      '@n-uf/doodl':
+      '@n-uf/pdf-doodl':
         specifier: workspace:*
-        version: link:../../packages/doodl
-      '@n-uf/doodl-go':
+        version: link:../../packages/pdf-doodl
+      '@n-uf/pdf-doodl-go':
         specifier: workspace:*
-        version: link:../../packages/doodl-go
-      '@n-uf/doodl-react':
+        version: link:../../packages/pdf-doodl-go
+      '@n-uf/pdf-doodl-react':
         specifier: workspace:*
-        version: link:../../packages/doodl-react
+        version: link:../../packages/pdf-doodl-react
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.8)
@@ -60,7 +60,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/doodl:
+  packages/pdf-doodl:
     devDependencies:
       '@types/node':
         specifier: ^22.15.0
@@ -75,17 +75,17 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)
 
-  packages/doodl-go:
+  packages/pdf-doodl-go:
     dependencies:
-      '@n-uf/doodl':
+      '@n-uf/pdf-doodl':
         specifier: workspace:*
-        version: link:../doodl
-      '@n-uf/doodl-pdf-react':
+        version: link:../pdf-doodl
+      '@n-uf/pdf-doodl-pdf-react':
         specifier: workspace:*
-        version: link:../doodl-pdf-react
-      '@n-uf/doodl-react':
+        version: link:../pdf-doodl-pdf-react
+      '@n-uf/pdf-doodl-react':
         specifier: workspace:*
-        version: link:../doodl-react
+        version: link:../pdf-doodl-react
       pdfjs-dist:
         specifier: ^5.0.0
         version: 5.5.207
@@ -118,14 +118,14 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)
 
-  packages/doodl-pdf-react:
+  packages/pdf-doodl-pdf-react:
     dependencies:
-      '@n-uf/doodl':
+      '@n-uf/pdf-doodl':
         specifier: workspace:*
-        version: link:../doodl
-      '@n-uf/doodl-react':
+        version: link:../pdf-doodl
+      '@n-uf/pdf-doodl-react':
         specifier: workspace:*
-        version: link:../doodl-react
+        version: link:../pdf-doodl-react
     devDependencies:
       '@types/node':
         specifier: ^22.15.0
@@ -158,11 +158,11 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)
 
-  packages/doodl-react:
+  packages/pdf-doodl-react:
     dependencies:
-      '@n-uf/doodl':
+      '@n-uf/pdf-doodl':
         specifier: workspace:*
-        version: link:../doodl
+        version: link:../pdf-doodl
     devDependencies:
       '@types/node':
         specifier: ^22.15.0

@@ -1,14 +1,14 @@
 # Contributing to doodl
 
-This guide is for **contributors** working on the `@n-uf/doodl*` packages.
+This guide is for **contributors** working on the `@n-uf/pdf-doodl*` packages.
 
 ## Repository layout
 
 ```
-packages/doodl/            Core canvas engine
-packages/doodl-react/      React bindings
-packages/doodl-pdf-react/  PDF annotation components
-packages/doodl-go/         Ready-to-use UI shell
+packages/pdf-doodl/            Core canvas engine
+packages/pdf-doodl-react/      React bindings
+packages/pdf-doodl-pdf-react/  PDF annotation components
+packages/pdf-doodl-go/         Ready-to-use UI shell
 apps/web/                  Showcase / docs site
 _agent/                    Contributor architecture notes
 ```
