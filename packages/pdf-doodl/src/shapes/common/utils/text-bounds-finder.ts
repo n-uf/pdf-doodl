@@ -6,7 +6,15 @@
  * - text-intersection: bounds → text (what text is inside this region?)
  * - text-bounds-finder: text → bounds (where does this text appear?)
  *
- * Uses the same Range API pattern as user text selection, but programmatically.
+ * Geometry strategy for PDF.js text layers:
+ * Spans use `transform: scaleX(--scale-x)`, which makes
+ * `Range.getClientRects()` unreliable for substring matches (wrong/phantom
+ * rects, often full-span or misaligned). Instead we:
+ * 1. Map concatenated text → DOM char positions
+ * 2. Find substring matches
+ * 3. Derive bounds from each parent span's *visual*
+ *    `getBoundingClientRect()` sliced proportionally by character offsets
+ *    within that span (matches how PDF.js lays out glyph advances)
  */
 
 import type { Bounds } from "../../../types/geometry";
@@ -16,13 +24,17 @@ import type { Bounds } from "../../../types/geometry";
 // =============================================================================
 
 /**
- * Character position mapping to DOM text node
+ * Character position mapping to DOM text node.
+ * Synthetic separators (inserted for visual word/line gaps) have `synthetic: true`
+ * and must not be used as Range endpoints.
  */
 interface CharPosition {
-  /** The DOM Text node containing this character */
-  textNode: Text;
-  /** Index of this character within the text node */
+  /** The DOM Text node containing this character (null for synthetic separators) */
+  textNode: Text | null;
+  /** Index of this character within the text node (-1 for synthetic) */
   charIndex: number;
+  /** True when this slot is a synthetic space, not a real DOM character */
+  synthetic: boolean;
 }
 
 /**
@@ -41,7 +53,7 @@ interface TextLayerMap {
 export interface TextMatch {
   /** Matched text (may differ in case from search) */
   text: string;
-  /** Bounding rectangles (multiple for multi-line matches) */
+  /** Bounding rectangles (multiple for multi-line / multi-span matches) */
   bounds: Bounds[];
   /** Start index in concatenated text */
   startIndex: number;
@@ -83,9 +95,6 @@ export interface FindTextOptions {
 // =============================================================================
 // TEXT LAYER MAP BUILDING
 // =============================================================================
-
-// Diagnostic log prefix for easy filtering
-const LOG_PREFIX = "[TextBoundsFinder]";
 
 /**
  * Check if two DOM elements have visual separation (different lines or horizontal gap)
@@ -156,9 +165,6 @@ function buildTextLayerMap(textLayer: HTMLElement): TextLayerMap {
   let node: Text | null = walker.nextNode() as Text | null;
   let prevNode: Text | null = null;
   let prevSpan: Element | null = null;
-  let nodeCount = 0;
-
-  console.log(LOG_PREFIX, "Building text layer map...");
 
   while (node) {
     const text = node.textContent ?? "";
@@ -167,7 +173,6 @@ function buildTextLayerMap(textLayer: HTMLElement): TextLayerMap {
       continue;
     }
 
-    nodeCount++;
     const currSpan = getParentSpan(node);
 
     // Check if we need to add a space between this node and previous
@@ -185,19 +190,17 @@ function buildTextLayerMap(textLayer: HTMLElement): TextLayerMap {
       hasVisualSeparation(prevSpan, currSpan);
 
     if (shouldAddSpace) {
-      // Add space for visual separation (line break or word gap)
+      // Synthetic separator — not a real DOM character. Must not be used as a
+      // Range endpoint (old code mapped these to charIndex 0 of the next node,
+      // which corrupted substring geometry).
       fullTextChars.push(" ");
-      charPositions.push({ textNode: node, charIndex: 0 });
-      console.log(
-        LOG_PREFIX,
-        `Node ${nodeCount}: Added space before "${text.slice(0, 20)}..."`,
-      );
+      charPositions.push({ textNode: null, charIndex: -1, synthetic: true });
     }
 
     // Map each character to its node position
     for (let i = 0; i < text.length; i++) {
       fullTextChars.push(text[i] ?? "");
-      charPositions.push({ textNode: node, charIndex: i });
+      charPositions.push({ textNode: node, charIndex: i, synthetic: false });
     }
 
     prevNode = node;
@@ -205,14 +208,7 @@ function buildTextLayerMap(textLayer: HTMLElement): TextLayerMap {
     node = walker.nextNode() as Text | null;
   }
 
-  const fullText = fullTextChars.join("");
-  console.log(
-    LOG_PREFIX,
-    `Built map: ${nodeCount} nodes, ${fullText.length} chars`,
-  );
-  console.log(LOG_PREFIX, `Full text preview: "${fullText.slice(0, 200)}..."`);
-
-  return { fullText, charPositions };
+  return { fullText: fullTextChars.join(""), charPositions };
 }
 
 // =============================================================================
@@ -266,17 +262,130 @@ function mergeAdjacentBounds(bounds: Bounds[]): Bounds[] {
 }
 
 // =============================================================================
+// MATCH GEOMETRY (span-proportional)
+// =============================================================================
+
+interface SpanSegment {
+  textNode: Text;
+  /** Inclusive start index within the text node */
+  startChar: number;
+  /** Exclusive end index within the text node */
+  endChar: number;
+}
+
+/**
+ * Collapse a match's charPositions into contiguous per-text-node segments,
+ * skipping synthetic separator slots.
+ */
+function collectMatchSegments(
+  charPositions: CharPosition[],
+  matchStart: number,
+  matchEnd: number,
+): SpanSegment[] {
+  const segments: SpanSegment[] = [];
+  let current: SpanSegment | null = null;
+
+  for (let i = matchStart; i < matchEnd; i++) {
+    const pos = charPositions[i];
+    if (!pos || pos.synthetic || pos.textNode === null || pos.charIndex < 0) {
+      // Break segment across synthetic gaps
+      current = null;
+      continue;
+    }
+
+    if (
+      current &&
+      current.textNode === pos.textNode &&
+      current.endChar === pos.charIndex
+    ) {
+      current.endChar = pos.charIndex + 1;
+    } else {
+      current = {
+        textNode: pos.textNode,
+        startChar: pos.charIndex,
+        endChar: pos.charIndex + 1,
+      };
+      segments.push(current);
+    }
+  }
+
+  return segments;
+}
+
+/**
+ * Bounds for one span segment via proportional slice of the span's visual rect.
+ *
+ * PDF.js stretches each span with scaleX so the *element* box matches glyph
+ * advances; character fractions of that box are the reliable substring quads.
+ * Range.getClientRects() is not used here — it misbehaves under scaleX.
+ */
+function boundsForSpanSegment(
+  segment: SpanSegment,
+  layerRect: DOMRect,
+  scale: number,
+): Bounds | null {
+  const span = getParentSpan(segment.textNode);
+  if (!span) return null;
+
+  const spanText = segment.textNode.textContent ?? "";
+  if (spanText.length === 0) return null;
+
+  const start = Math.max(0, Math.min(segment.startChar, spanText.length));
+  const end = Math.max(start, Math.min(segment.endChar, spanText.length));
+  if (end <= start) return null;
+
+  const spanRect = span.getBoundingClientRect();
+  if (spanRect.width <= 0 || spanRect.height <= 0) return null;
+
+  const leftFrac = start / spanText.length;
+  const rightFrac = end / spanText.length;
+
+  const left = spanRect.left + spanRect.width * leftFrac;
+  const right = spanRect.left + spanRect.width * rightFrac;
+
+  return {
+    x: (left - layerRect.left) / scale,
+    y: (spanRect.top - layerRect.top) / scale,
+    width: (right - left) / scale,
+    height: spanRect.height / scale,
+  };
+}
+
+/**
+ * Compute page-space bounds for a match using span-proportional geometry.
+ */
+function boundsForMatch(
+  charPositions: CharPosition[],
+  matchStart: number,
+  matchEnd: number,
+  layerRect: DOMRect,
+  scale: number,
+  mergeRects: boolean,
+): Bounds[] {
+  const segments = collectMatchSegments(charPositions, matchStart, matchEnd);
+  const bounds: Bounds[] = [];
+
+  for (const segment of segments) {
+    const bound = boundsForSpanSegment(segment, layerRect, scale);
+    if (bound && bound.width > 0 && bound.height > 0) {
+      bounds.push(bound);
+    }
+  }
+
+  return mergeRects ? mergeAdjacentBounds(bounds) : bounds;
+}
+
+// =============================================================================
 // MAIN FUNCTION
 // =============================================================================
 
 /**
  * Find all occurrences of text in a text layer and return their bounds
  *
- * Uses the same Range API as user text selection, but programmatically:
  * 1. Build char→node position map from text layer
  * 2. Find substring matches in concatenated text
- * 3. Create Range for each match's start/end positions
- * 4. Get bounding rects from Range.getClientRects()
+ * 3. Derive substring-accurate bounds from parent span visual rects
+ *    (proportional character slices — safe under PDF.js scaleX transforms)
  *
  * @param searchText - Text to search for
  * @param textLayer - The text layer DOM element
@@ -302,19 +411,8 @@ export function findTextInTextLayer(
     matchMode = "substring",
   } = options;
 
-  console.log(LOG_PREFIX, `findTextInTextLayer called:`, {
-    searchText: searchText.slice(0, 30),
-    scale,
-    ignoreCase,
-    matchMode,
-  });
-
   // Edge cases
   if (!searchText || !textLayer || scale === 0) {
-    console.log(
-      LOG_PREFIX,
-      `Early exit: searchText=${!!searchText}, textLayer=${!!textLayer}, scale=${scale}`,
-    );
     return [];
   }
 
@@ -322,7 +420,6 @@ export function findTextInTextLayer(
   const { fullText, charPositions } = buildTextLayerMap(textLayer);
 
   if (fullText.length === 0 || charPositions.length === 0) {
-    console.log(LOG_PREFIX, `Empty text layer map`);
     return [];
   }
 
@@ -330,25 +427,6 @@ export function findTextInTextLayer(
   const normalizedSearch = ignoreCase ? searchText.toLowerCase() : searchText;
   const normalizedFull = ignoreCase ? fullText.toLowerCase() : fullText;
   const layerRect = textLayer.getBoundingClientRect();
-
-  console.log(
-    LOG_PREFIX,
-    `Searching for "${normalizedSearch}" in text of length ${normalizedFull.length}`,
-  );
-
-  // Check if search text exists in full text
-  const firstOccurrence = normalizedFull.indexOf(normalizedSearch);
-  console.log(LOG_PREFIX, `First occurrence at index: ${firstOccurrence}`);
-  if (firstOccurrence >= 0) {
-    const context = normalizedFull.slice(
-      Math.max(0, firstOccurrence - 20),
-      Math.min(
-        normalizedFull.length,
-        firstOccurrence + normalizedSearch.length + 20,
-      ),
-    );
-    console.log(LOG_PREFIX, `Context around first match: "...${context}..."`);
-  }
 
   // Word boundary check for "word" match mode
   const isWordBoundary = (char: string | undefined): boolean => {
@@ -378,80 +456,37 @@ export function findTextInTextLayer(
       }
     }
 
-    // Get DOM positions for match boundaries
-    const startPos = charPositions[matchStart];
-    const endPos = charPositions[matchEnd - 1];
+    // Reject matches whose character span is only synthetic separators
+    // (shouldn't happen for real queries, but keeps geometry honest).
+    const hasRealChars = charPositions
+      .slice(matchStart, matchEnd)
+      .some((p) => p && !p.synthetic);
+    if (!hasRealChars) {
+      searchIdx = matchStart + 1;
+      continue;
+    }
 
-    console.log(
-      LOG_PREFIX,
-      `Match found at ${matchStart}-${matchEnd}: "${fullText.slice(matchStart, matchEnd)}"`,
+    const bounds = boundsForMatch(
+      charPositions,
+      matchStart,
+      matchEnd,
+      layerRect,
+      scale,
+      mergeRects,
     );
 
-    if (startPos && endPos) {
-      try {
-        // Create Range spanning the match
-        const range = document.createRange();
-        range.setStart(startPos.textNode, startPos.charIndex);
-        range.setEnd(endPos.textNode, endPos.charIndex + 1);
-
-        // Get bounding rects (multiple for multi-line text)
-        const clientRects = range.getClientRects();
-        const bounds: Bounds[] = [];
-
-        console.log(
-          LOG_PREFIX,
-          `Range created, clientRects count: ${clientRects.length}`,
-        );
-
-        for (const rect of clientRects) {
-          if (rect.width > 0 && rect.height > 0) {
-            bounds.push({
-              x: (rect.left - layerRect.left) / scale,
-              y: (rect.top - layerRect.top) / scale,
-              width: rect.width / scale,
-              height: rect.height / scale,
-            });
-          } else {
-            console.log(
-              LOG_PREFIX,
-              `Skipped zero-size rect: w=${rect.width}, h=${rect.height}`,
-            );
-          }
-        }
-
-        if (bounds.length > 0) {
-          console.log(
-            LOG_PREFIX,
-            `Match has ${bounds.length} bounds, adding to results`,
-          );
-          matches.push({
-            text: fullText.slice(matchStart, matchEnd),
-            bounds: mergeRects ? mergeAdjacentBounds(bounds) : bounds,
-            startIndex: matchStart,
-            endIndex: matchEnd,
-          });
-        } else {
-          console.log(LOG_PREFIX, `Match has NO valid bounds - skipping`);
-        }
-      } catch (err) {
-        // Range API can throw for edge cases, skip this match
-        console.log(LOG_PREFIX, `Range API error:`, err);
-      }
-    } else {
-      console.log(
-        LOG_PREFIX,
-        `Missing char positions: startPos=${!!startPos}, endPos=${!!endPos}`,
-      );
+    if (bounds.length > 0) {
+      matches.push({
+        text: fullText.slice(matchStart, matchEnd),
+        bounds,
+        startIndex: matchStart,
+        endIndex: matchEnd,
+      });
     }
 
     // Move past this match to find next
     searchIdx = matchStart + 1;
   }
-
-  console.log(
-    LOG_PREFIX,
-    `Search complete: found ${matches.length} matches with bounds for "${searchText.slice(0, 20)}"`,
-  );
 
   return matches;
 }
@@ -480,3 +515,9 @@ export function hasTextInTextLayer(
 
   return normalizedFull.includes(normalizedSearch);
 }
+
+// Exported for unit tests
+export const __testOnly = {
+  collectMatchSegments,
+  mergeAdjacentBounds,
+};

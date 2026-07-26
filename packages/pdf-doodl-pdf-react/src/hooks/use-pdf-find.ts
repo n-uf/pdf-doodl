@@ -23,7 +23,6 @@
 
 import {
   findTextInTextLayer,
-  HIGHLIGHT_STYLE,
   type DrawShape,
   type RectShape,
   type ShapeStyle,
@@ -69,9 +68,9 @@ export interface UsePdfFindOptions {
   debounceMs?: number;
   /** Max matches per page passed to `findTextInTextLayer` (default: 50) */
   maxMatchesPerPage?: number;
-  /** Style for non-active match highlights (default: HIGHLIGHT_STYLE, yellow) */
+  /** Style for non-active match highlights (default: amber fill, no stroke) */
   matchStyle?: ShapeStyle;
-  /** Style for the active match highlight (default: stronger amber) */
+  /** Style for the active match highlight (default: stronger amber + stroke) */
   activeMatchStyle?: ShapeStyle;
 }
 
@@ -114,10 +113,24 @@ const DEFAULT_DEBOUNCE_MS = 200;
 const DEFAULT_MAX_MATCHES_PER_PAGE = 50;
 const FIND_SHAPE_PREFIX = "find-match";
 
+/**
+ * Non-active matches: cool amber fill, no stroke — clearly a find hit but
+ * quieter than the current match. Avoid DEFAULT_SHAPE_STYLE blue so find
+ * highlights never read as overlay annotation boxes.
+ */
+const DEFAULT_MATCH_STYLE: ShapeStyle = {
+  fill: "#FBBF24",
+  fillOpacity: 0.4,
+  stroke: "none",
+  strokeWidth: 0,
+  blendMode: "multiply",
+};
+
+/** Active match: stronger fill + solid stroke so current vs others is obvious. */
 const DEFAULT_ACTIVE_MATCH_STYLE: ShapeStyle = {
-  fill: "#FFA726",
-  fillOpacity: 0.45,
-  stroke: "#FB8C00",
+  fill: "#F59E0B",
+  fillOpacity: 0.55,
+  stroke: "#B45309",
   strokeWidth: 2,
   strokeOpacity: 1,
   blendMode: "multiply",
@@ -160,7 +173,7 @@ export function usePdfFind(options: UsePdfFindOptions): UsePdfFindReturn {
     caseSensitive: caseSensitiveProp,
     debounceMs = DEFAULT_DEBOUNCE_MS,
     maxMatchesPerPage = DEFAULT_MAX_MATCHES_PER_PAGE,
-    matchStyle = HIGHLIGHT_STYLE,
+    matchStyle = DEFAULT_MATCH_STYLE,
     activeMatchStyle = DEFAULT_ACTIVE_MATCH_STYLE,
   } = options;
 
