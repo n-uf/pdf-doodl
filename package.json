@@ -12,7 +12,7 @@
     "typecheck": "pnpm -r --filter './packages/*' typecheck && pnpm --filter doodl-web typecheck",
     "test": "pnpm -r --filter './packages/*' test",
     "check": "pnpm typecheck && pnpm test",
-    "release": "pnpm --filter @n-uf/doodl release && pnpm --filter @n-uf/doodl-react release && pnpm --filter @n-uf/doodl-pdf-react release && pnpm --filter @n-uf/doodl-go release"
+    "release": "node ./scripts/release-workspace.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
