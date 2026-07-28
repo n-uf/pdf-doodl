@@ -39,7 +39,12 @@
     "dist",
     "CHANGELOG.md"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/index.mjs",
+    "./dist/index.cjs",
+    "./src/shapes/register-builtins.ts",
+    "./src/shapes/*/module.ts"
+  ],
   "scripts": {
     "build": "tsup",
     "check": "pnpm typecheck && pnpm test",

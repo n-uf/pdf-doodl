@@ -151,6 +151,45 @@ export function snapRectToPixel(
   };
 }
 
+/**
+ * Snap a rectangle to device-pixel edges under the current CTM (DPR × scale).
+ *
+ * Prefer this over {@link snapRectToPixel} when the context has a non-identity
+ * transform so edges land on physical pixels after `setTransform`.
+ */
+export function snapRectToDevicePixels(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): { x: number; y: number; width: number; height: number } {
+  const transform = ctx.getTransform();
+  const scaleX = transform.a;
+  const scaleY = transform.d;
+
+  if (
+    !Number.isFinite(scaleX) ||
+    !Number.isFinite(scaleY) ||
+    scaleX === 0 ||
+    scaleY === 0
+  ) {
+    return snapRectToPixel(x, y, width, height);
+  }
+
+  const x0 = Math.round(x * scaleX) / scaleX;
+  const y0 = Math.round(y * scaleY) / scaleY;
+  const x1 = Math.round((x + width) * scaleX) / scaleX;
+  const y1 = Math.round((y + height) * scaleY) / scaleY;
+
+  return {
+    x: x0,
+    y: y0,
+    width: x1 - x0,
+    height: y1 - y0,
+  };
+}
+
 // =============================================================================
 // CANVAS OPERATIONS
 // =============================================================================
@@ -229,6 +268,27 @@ export function applyStyle(
     ctx.setLineDash([]);
   }
 
+  if (style.strokeDashOffset !== undefined) {
+    ctx.lineDashOffset = style.strokeDashOffset;
+  }
+
+  if (style.strokeLineCap !== undefined) {
+    ctx.lineCap = style.strokeLineCap;
+  }
+  if (style.strokeLineJoin !== undefined) {
+    ctx.lineJoin = style.strokeLineJoin;
+  }
+  if (style.miterLimit !== undefined) {
+    ctx.miterLimit = style.miterLimit;
+  }
+
+  if (style.shadow !== undefined) {
+    ctx.shadowColor = style.shadow.color;
+    ctx.shadowBlur = style.shadow.blur ?? 0;
+    ctx.shadowOffsetX = style.shadow.offsetX ?? 0;
+    ctx.shadowOffsetY = style.shadow.offsetY ?? 0;
+  }
+
   if (style.blendMode) {
     ctx.globalCompositeOperation = mapBlendMode(style.blendMode);
   }
@@ -241,4 +301,9 @@ export function resetStyle(ctx: CanvasRenderingContext2D): void {
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = "source-over";
   ctx.setLineDash([]);
+  ctx.lineDashOffset = 0;
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
 }

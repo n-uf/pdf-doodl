@@ -5,6 +5,12 @@
 import type { PolygonShape } from "../../types";
 import type { Point } from "../../types/geometry";
 import { mapBlendMode } from "../common/utils/canvas";
+import { getShapeRenderContext } from "../common/utils/render-context";
+import {
+  applyShapeShadow,
+  applyStrokePaint,
+  resolveStyleLength,
+} from "../common/utils/stroke";
 
 // =============================================================================
 // PREVIEW CONSTANTS
@@ -58,6 +64,16 @@ function renderClosedPolygon(
 ): void {
   ctx.save();
 
+  const renderContext = getShapeRenderContext();
+  const style = polygon.style;
+  const scale = renderContext.scale;
+  const screenSpace = style.screenSpaceStroke ?? false;
+  const strokeWidth = resolveStyleLength(
+    style.strokeWidth ?? 2,
+    screenSpace,
+    scale
+  );
+
   ctx.beginPath();
   ctx.moveTo(polygon.points[0]!.x, polygon.points[0]!.y);
   for (let i = 1; i < polygon.points.length; i++) {
@@ -65,24 +81,23 @@ function renderClosedPolygon(
   }
   ctx.closePath();
 
+  applyShapeShadow(ctx, style.shadow);
+
   // Fill
-  if (polygon.style.fill && polygon.style.fill !== "none") {
-    ctx.fillStyle = polygon.style.fill;
-    ctx.globalAlpha = polygon.style.fillOpacity ?? 1;
-    if (polygon.style.blendMode) {
-      ctx.globalCompositeOperation = mapBlendMode(polygon.style.blendMode);
+  if (style.fill && style.fill !== "none") {
+    ctx.fillStyle = style.fill;
+    ctx.globalAlpha = style.fillOpacity ?? 1;
+    if (style.blendMode) {
+      ctx.globalCompositeOperation = mapBlendMode(style.blendMode);
     }
     ctx.fill();
   }
 
-  // Stroke
-  if (polygon.style.stroke && polygon.style.stroke !== "none") {
-    ctx.strokeStyle = polygon.style.stroke;
-    ctx.lineWidth = polygon.style.strokeWidth ?? 2;
-    ctx.globalAlpha = polygon.style.strokeOpacity ?? 1;
-    if (polygon.style.strokeDash) {
-      ctx.setLineDash(polygon.style.strokeDash);
-    }
+  // Stroke (center align only — path offset for outside/inside is non-trivial)
+  if (style.stroke && style.stroke !== "none" && strokeWidth > 0) {
+    ctx.strokeStyle = style.stroke;
+    ctx.globalAlpha = style.strokeOpacity ?? 1;
+    applyStrokePaint(ctx, style, strokeWidth, scale);
     ctx.stroke();
   }
 

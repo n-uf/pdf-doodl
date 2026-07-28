@@ -4,6 +4,10 @@
  * Shape-centric architecture with unified exports.
  */
 
+import { registerBuiltinShapes } from "./shapes/register-builtins";
+registerBuiltinShapes();
+export { registerBuiltinShapes } from "./shapes/register-builtins";
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -19,7 +23,14 @@ export {
   REDACT_HIGHLIGHT_STYLE,
   REDACT_ZONE_STYLE,
 } from "./types/style";
-export type { BlendMode, ShapeStyle } from "./types/style";
+export type {
+  BlendMode,
+  ShapeOutline,
+  ShapeOutlineGlow,
+  ShapeShadow,
+  ShapeStyle,
+  StrokeAlign,
+} from "./types/style";
 
 // Input
 export { DEFAULT_MODIFIERS } from "./types/input";
@@ -84,5 +95,20 @@ export * from "./drivers";
 // DOODL (main API)
 // =============================================================================
 
-export { createDoodl, Doodl } from "./doodl";
-export type { DoodlEvents, DoodlOptions, PingOptions } from "./doodl";
+export {
+  createDoodl,
+  Doodl,
+  defaultColorForAnimation,
+  defaultDurationForAnimation,
+  getActivationAnimationRenderer,
+  registerActivationAnimation,
+} from "./doodl";
+export type {
+  ActivationAnimationFrame,
+  ActivationAnimationRenderer,
+  ActivationAnimationType,
+  BuiltinActivationAnimation,
+  DoodlEvents,
+  DoodlOptions,
+  PingOptions,
+} from "./doodl";

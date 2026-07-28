@@ -5,6 +5,8 @@
 @source "../../../packages/pdf-doodl/**/*.{ts,tsx}";
 @source "../../../packages/pdf-doodl-go/**/*.{ts,tsx}";
 @source "../../../packages/pdf-doodl-react/**/*.{ts,tsx}";
+/* Class-token constants (w-[7ch], etc.) live only in this package’s TS. */
+@source "../../../packages/pdf-doodl-pdf-react/src/**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -45,6 +47,15 @@ body {
 /* Selection */
 ::selection {
   background: rgba(251, 191, 36, 0.3);
+}
+
+/* Suppress UA focus frames; doodl-go + host chrome use border/fill for state. */
+:is(button, [role="tab"], a, summary):focus,
+:is(button, [role="tab"], a, summary):focus-visible {
+  outline: none;
+}
+:is(button, [role="tab"], a, summary) {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* PDF Text Layer styles are now provided by @n-uf/pdf-doodl-pdf-react */

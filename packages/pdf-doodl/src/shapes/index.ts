@@ -2,6 +2,8 @@
  * Shapes module - Re-export catalog
  */
 
+export { registerBuiltinShapes } from "./register-builtins";
+
 // =============================================================================
 // COMMON (types, utils, registry, dispatch, controllers)
 // =============================================================================
@@ -84,9 +86,21 @@ export {
   // Shape capability checks
   shapeWantsCapturedText,
   // Pixel snapping
+  snapRectToDevicePixels,
   snapRectToPixel,
   snapToPixel,
   snapToPixelFloor,
+  // Stroke / screen-space / alignment
+  alignedEllipseRadii,
+  alignedStrokeRect,
+  applyShapeShadow,
+  applyStrokePaint,
+  getShapeRenderContext,
+  inflateRect,
+  resolveStyleLength,
+  runWithShapeRenderContext,
+  setShapeRenderContext,
+  styleRenderPadding,
   sortShapesByBehavior,
   transformShape,
 } from "./common";
@@ -102,9 +116,11 @@ export type {
   HitTestResult,
   IntersectionMode,
   MultiClickController,
+  RectGeom,
   ShapeEditMode,
   ShapeEditState,
   ShapeModule,
+  ShapeRenderContext,
   TextExtractionContext,
   TextExtractor,
   TextMatch,

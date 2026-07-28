@@ -22,7 +22,14 @@ export {
   REDACT_HIGHLIGHT_STYLE,
   REDACT_ZONE_STYLE,
 } from "./style";
-export type { BlendMode, ShapeStyle } from "./style";
+export type {
+  BlendMode,
+  ShapeOutline,
+  ShapeOutlineGlow,
+  ShapeShadow,
+  ShapeStyle,
+  StrokeAlign,
+} from "./style";
 
 // Behavior
 export {

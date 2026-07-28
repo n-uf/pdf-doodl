@@ -3,6 +3,10 @@
  *
  * Encapsulates keyboard event handling, modifier tracking,
  * and command detection (undo, redo, delete, escape).
+ *
+ * Commands are never claimed while focus is in an editable field
+ * (input / textarea / select / contenteditable) so Backspace, Escape,
+ * and Ctrl+Z keep their native text-editing behavior.
  */
 
 import type { DrawModifiers } from "../types/input";
@@ -34,6 +38,25 @@ export interface KeyboardDriverOptions {
   target?: EventTarget;
   /** Whether keyboard input is disabled */
   disabled?: boolean;
+}
+
+/**
+ * True when keyboard events should stay with a text field / form control
+ * instead of becoming canvas commands (delete selection, undo shapes, …).
+ *
+ * Duck-typed so unit tests can run without a full DOM implementation.
+ */
+export function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (target === null || typeof target !== "object") return false;
+  const el = target as {
+    tagName?: string;
+    isContentEditable?: boolean;
+  };
+  const tag = el.tagName?.toUpperCase();
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+    return true;
+  }
+  return el.isContentEditable === true;
 }
 
 // =============================================================================
@@ -124,6 +147,12 @@ export class KeyboardDriver {
 
     const event = e as KeyboardEvent;
     this._updateModifiers(event);
+
+    // Leave text editing alone — preventDefault on Backspace/Esc/Ctrl+Z here
+    // would break find bars and every other input while a canvas is mounted.
+    if (isEditableKeyboardTarget(event.target)) {
+      return;
+    }
 
     // Detect commands
     const command = this._detectCommand(event);

@@ -50,7 +50,13 @@
     "dist",
     "CHANGELOG.md"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css",
+    "**/pdf-annotation-page.tsx",
+    "**/pdf-annotation-page.js",
+    "**/pdf-annotation-page.mjs",
+    "**/pdf-annotation-page.cjs"
+  ],
   "scripts": {
     "build": "tsup",
     "check": "pnpm typecheck",
@@ -74,7 +80,7 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "pdfjs-dist": "5.5.207",
+    "pdfjs-dist": "5.7.284",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-pdf": "^10.4.1",

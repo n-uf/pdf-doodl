@@ -1,0 +1,33 @@
+---
+description: Interactive UI states must be visually obvious at a glance
+globs:
+alwaysApply: true
+---
+
+# Distinct interactive states
+
+On/off, pressed, selected, active, disabled, error, and similar states must be **obvious to humans at a glance** — not only different by a bit, boolean, or ARIA attribute.
+
+## Do not rely on alone
+
+- `aria-pressed`, `aria-selected`, or other ARIA flags without matching visuals
+- Opacity tweaks of ~20% or less
+- Font-weight change alone
+- Tooltip or title text as the only indicator
+
+## Prefer instead
+
+Use enough **luminance and contrast** for dark UI so states read instantly:
+
+- Fill or background change
+- Border contrast (weight, color, or inset ring)
+- Icon swap or glyph variant
+- Clear label text when the control encodes mode
+
+Combine cues when a single tweak is still subtle.
+
+## Scope
+
+Applies to toggles, segmented controls, cycling/mode buttons, toolbar chrome, and any control where the current state drives behavior or layout.
+
+When reviewing or implementing UI, ask: *could someone tell the state in under a second without inspecting the DOM?* If not, strengthen the visual treatment.

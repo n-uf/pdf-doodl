@@ -103,6 +103,15 @@ export interface PdfContentProps {
   pageGap?: number;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
+  /**
+   * Ephemeral overlay shapes for a page (e.g. find-in-document highlights),
+   * merged into that page's shapes for rendering only. Shapes with
+   * `behavior.persisted !== false` returned here would leak into saved
+   * annotations if the caller doesn't also filter incoming
+   * `onShapesChange`/`onAnnotationsChange` — callers should use a
+   * non-persisted behavior (e.g. `usePdfFind`'s highlight shapes already do).
+   */
+  getOverlayShapesForPage?: (page: number) => DrawShape[];
 }
 
 // =============================================================================
@@ -191,6 +200,7 @@ export function PdfContent({
   showInlineNavigator = false,
   pageGap = 8,
   mergeHighlights = true,
+  getOverlayShapesForPage,
 }: PdfContentProps): React.ReactElement {
   const [numPages, setNumPages] = useState(0);
 
@@ -203,8 +213,16 @@ export function PdfContent({
     useState<PageAnnotations>(new Map());
   const annotations = controlledAnnotations ?? internalAnnotations;
 
+  const shapesForPage = useCallback(
+    (page: number): DrawShape[] => [
+      ...(annotations.get(page) ?? []),
+      ...(getOverlayShapesForPage?.(page) ?? []),
+    ],
+    [annotations, getOverlayShapesForPage],
+  );
+
   // Get shapes for current page (single mode)
-  const currentPageShapes = annotations.get(currentPage) ?? [];
+  const currentPageShapes = shapesForPage(currentPage);
 
   // Page numbers array for exploded mode
   const pageNumbers = useMemo(
@@ -370,7 +388,7 @@ export function PdfContent({
                   scale={scale}
                   tool={tool}
                   style={style}
-                  shapes={annotations.get(pageNum) ?? []}
+                  shapes={shapesForPage(pageNum)}
                   onShapesChange={(shapes) =>
                     handleShapesChangeForPage(pageNum, shapes)
                   }

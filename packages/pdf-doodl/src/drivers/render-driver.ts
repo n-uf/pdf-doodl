@@ -14,6 +14,8 @@
  * Edit mode and selection rendering is delegated to shape modules via dispatch.
  */
 
+import type { ActivationAnimationType } from "../effects/activation-animation";
+import { getActivationAnimationRenderer } from "../effects/activation-animation";
 import {
   clearCanvas,
   configureSharpRendering,
@@ -27,6 +29,8 @@ import {
   shapeSupportsEditMode,
   type ShapeEditState,
 } from "../shapes";
+import { runWithShapeRenderContext } from "../shapes/common/utils/render-context";
+import { styleRenderPadding } from "../shapes/common/utils/stroke";
 import type { Bounds, DrawShape } from "../types";
 import type {
   ImageSmoothingMode,
@@ -51,6 +55,8 @@ export interface PingEffect {
   startTime: number;
   duration: number;
   color: [number, number, number];
+  /** Animation preset (default behavior is `"ping"`). */
+  type: ActivationAnimationType;
 }
 
 /**
@@ -67,6 +73,8 @@ export interface RenderStateProvider {
   getEditState?: () => ShapeEditState | null;
   /** Get active ping effects */
   getPingEffects?: () => PingEffect[];
+  /** When true, skip resize-handle chrome (selection-only / readOnly) */
+  isReadOnly?: () => boolean;
 }
 
 /**
@@ -323,8 +331,7 @@ export class RenderDriver {
     }
 
     const bounds = getShapeBounds(shape);
-    // Add extra padding for stroke width
-    const padding = (shape.style.strokeWidth ?? 2) + 4;
+    const padding = styleRenderPadding(shape.style, this._scale);
     this._dirtyRectManager.markDirty(bounds, padding);
     this._needsRender = true;
   }
@@ -465,53 +472,62 @@ export class RenderDriver {
       ? shapes
       : this._filterShapesToDirtyRegions(shapes, dirtyRegions);
 
-    // Render shapes with behavior-aware sorting and styling
-    renderShapesWithBehavior(ctx, shapesToRender);
+    runWithShapeRenderContext(
+      {
+        enablePixelSnapping: this._enablePixelSnapping,
+        scale: this._scale,
+      },
+      () => {
+        // Render shapes with behavior-aware sorting and styling
+        renderShapesWithBehavior(ctx, shapesToRender);
 
-    // Render preview (always uses normal style)
-    if (previewShape) {
-      const shouldRenderPreview =
-        isFullRedraw ||
-        this._shapeIntersectsDirty(previewShape, dirtyRegions);
-      if (shouldRenderPreview) {
-        renderShapesWithBehavior(ctx, [previewShape]);
-      }
-    }
+        // Render preview (always uses normal style)
+        if (previewShape) {
+          const shouldRenderPreview =
+            isFullRedraw ||
+            this._shapeIntersectsDirty(previewShape, dirtyRegions);
+          if (shouldRenderPreview) {
+            renderShapesWithBehavior(ctx, [previewShape]);
+          }
+        }
 
-    // Check if in edit mode (delegated to shape module)
-    if (editState) {
-      const editingShape = shapes.find((s) => s.id === editState.shapeId);
-      if (editingShape && shapeSupportsEditMode(editingShape)) {
-        const shouldRenderEdit =
-          isFullRedraw ||
-          this._shapeIntersectsDirty(editingShape, dirtyRegions);
-        if (shouldRenderEdit) {
-          // Delegated to shape module - render driver is shape-agnostic
-          renderShapeEditMode(ctx, editingShape, editState);
+        // Check if in edit mode (delegated to shape module)
+        if (editState) {
+          const editingShape = shapes.find((s) => s.id === editState.shapeId);
+          if (editingShape && shapeSupportsEditMode(editingShape)) {
+            const shouldRenderEdit =
+              isFullRedraw ||
+              this._shapeIntersectsDirty(editingShape, dirtyRegions);
+            if (shouldRenderEdit) {
+              // Delegated to shape module - render driver is shape-agnostic
+              renderShapeEditMode(ctx, editingShape, editState);
+            }
+          }
+        } else if (!this._stateProvider.isReadOnly?.()) {
+          // Render selection UI (delegated to shape modules).
+          // Skipped in readOnly — consumers style selection via shape props.
+          const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
+          for (const shape of selectedShapes) {
+            const shouldRenderSelection =
+              isFullRedraw || this._shapeIntersectsDirty(shape, dirtyRegions);
+            if (shouldRenderSelection) {
+              renderShapeSelection(ctx, shape);
+            }
+          }
+        }
+
+        // Render ephemeral ping effects (post-pass, on top of everything)
+        if (this._renderPingEffects(ctx, shapes)) {
+          this._needsRender = true;
         }
       }
-    } else {
-      // Render selection UI (delegated to shape modules)
-      const selectedShapes = shapes.filter((s) => selectedIds.has(s.id));
-      for (const shape of selectedShapes) {
-        const shouldRenderSelection =
-          isFullRedraw || this._shapeIntersectsDirty(shape, dirtyRegions);
-        if (shouldRenderSelection) {
-          renderShapeSelection(ctx, shape);
-        }
-      }
-    }
-
-    // Render ephemeral ping effects (post-pass, on top of everything)
-    if (this._renderPingEffects(ctx, shapes)) {
-      this._needsRender = true;
-    }
+    );
 
     ctx.restore();
   }
 
   /**
-   * Render active ping effects (border-trace comet animation).
+   * Render active activation-frame effects (`ping` / `locateFlash` / …).
    * Returns true if any effects are still animating.
    */
   private _renderPingEffects(
@@ -535,15 +551,30 @@ export class RenderDriver {
 
       const b = getShapeBounds(shape);
       const [r, g, bb] = effect.color;
+      const type = effect.type;
 
-      const pad = 3 / sc;
-      const bx = b.x - pad;
-      const by = b.y - pad;
-      const bw = b.width + pad * 2;
-      const bh = b.height + pad * 2;
-      const per = 2 * (bw + bh);
+      // Specialized multi-pass path for the default border-trace comet.
+      if (type === "ping") {
+        const pad = 3 / sc;
+        const bx = b.x - pad;
+        const by = b.y - pad;
+        const bw = b.width + pad * 2;
+        const bh = b.height + pad * 2;
+        const per = 2 * (bw + bh);
+        this._renderBorderTrace(ctx, t, bx, by, bw, bh, per, r, g, bb, sc);
+        continue;
+      }
 
-      this._renderBorderTrace(ctx, t, bx, by, bw, bh, per, r, g, bb, sc);
+      const renderer = getActivationAnimationRenderer(type);
+      renderer(ctx, {
+        t,
+        x: b.x,
+        y: b.y,
+        width: b.width,
+        height: b.height,
+        color: effect.color,
+        scale: sc,
+      });
     }
 
     return hasActive;

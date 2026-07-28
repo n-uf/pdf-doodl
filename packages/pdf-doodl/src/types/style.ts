@@ -14,6 +14,56 @@ export type BlendMode =
   | "lighten";
 
 /**
+ * Where the stroke is painted relative to the path.
+ * - `center` — Canvas default (half inside / half outside)
+ * - `outside` — stroke sits entirely outside the fill bounds
+ * - `inside` — stroke sits entirely inside the fill bounds
+ *
+ * Fully supported on rects and ellipses. Other shapes treat unknown aligns as `center`.
+ */
+export type StrokeAlign = "center" | "outside" | "inside";
+
+/**
+ * Soft glow for secondary outlines (selection chrome).
+ * `blur` is always in CSS pixels (screen space), matching CSS box-shadow.
+ */
+export interface ShapeOutlineGlow {
+  color: string;
+  /** Blur radius in CSS pixels (default 12) */
+  blur?: number;
+}
+
+/**
+ * Secondary outline drawn outside the shape (e.g. selection accent).
+ * Widths/offset honor `ShapeStyle.screenSpaceStroke` when set on the parent style.
+ */
+export interface ShapeOutline {
+  stroke: string;
+  /** Outline width (default 2) */
+  strokeWidth?: number;
+  /** Gap between shape bounds and outline inner edge (default 0) */
+  offset?: number;
+  strokeOpacity?: number;
+  strokeDash?: number[];
+  /** Soft glow behind the outline */
+  glow?: ShapeOutlineGlow;
+}
+
+/**
+ * Drop shadow applied while filling/stroking (canvas shadow* attrs).
+ * Offsets and blur are CSS pixels (unaffected by the page CTM), matching CSS box-shadow.
+ */
+export interface ShapeShadow {
+  color: string;
+  /** Blur radius in CSS pixels (default 0) */
+  blur?: number;
+  /** Horizontal offset in CSS pixels (default 0) */
+  offsetX?: number;
+  /** Vertical offset in CSS pixels (default 0) */
+  offsetY?: number;
+}
+
+/**
  * Shape styling options
  */
 export interface ShapeStyle {
@@ -27,8 +77,32 @@ export interface ShapeStyle {
   strokeWidth?: number;
   /** Stroke opacity (0-1), default 1 */
   strokeOpacity?: number;
-  /** Dash pattern [on, off] */
+  /** Dash pattern [on, off, …] */
   strokeDash?: number[];
+  /** Dash phase offset (same units as strokeDash / strokeWidth) */
+  strokeDashOffset?: number;
+  /** Stroke alignment relative to path (default `"center"`) */
+  strokeAlign?: StrokeAlign;
+  /**
+   * When true, `strokeWidth`, `strokeDash`, `strokeDashOffset`, `cornerRadius`,
+   * and outline width/offset are in CSS pixels and stay constant under page scale.
+   */
+  screenSpaceStroke?: boolean;
+  /** Canvas line cap (useful for dotted approximations with round caps) */
+  strokeLineCap?: CanvasLineCap;
+  /** Canvas line join */
+  strokeLineJoin?: CanvasLineJoin;
+  /** Canvas miter limit when `strokeLineJoin` is `"miter"` */
+  miterLimit?: number;
+  /** Corner radius for axis-aligned rects (page units, or CSS px if screenSpaceStroke) */
+  cornerRadius?: number;
+  /**
+   * Secondary outside outline (selection chrome). Drawn after the main stroke;
+   * does not replace status/stroke color.
+   */
+  outline?: ShapeOutline;
+  /** Drop shadow for fill/stroke (CSS-pixel blur/offsets) */
+  shadow?: ShapeShadow;
   /** Blend mode, default "normal" */
   blendMode?: BlendMode;
 }

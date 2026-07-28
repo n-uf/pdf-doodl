@@ -2,7 +2,12 @@
  * Types for Page Annotation (multi-page document support)
  */
 
-import type { DrawShape, DrawTool, ShapeStyle } from "@n-uf/pdf-doodl";
+import type {
+  ActivationAnimationType,
+  DrawShape,
+  DrawTool,
+  ShapeStyle,
+} from "@n-uf/pdf-doodl";
 
 // =============================================================================
 // MULTI-PAGE ANNOTATIONS
@@ -60,6 +65,21 @@ export interface PageAnnotationControllerOptions {
   initialStyle?: ShapeStyle;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
+  /**
+   * Selection-only mode (default: false).
+   * Disables draw/edit/drag/resize; pointer selection still works.
+   */
+  readOnly?: boolean;
+  /**
+   * Allow activation-frame `ping()` animation (default: true).
+   * When false, `ping()` is a no-op.
+   */
+  enablePing?: boolean;
+  /**
+   * Default `ping()` animation when `type` is omitted (default: `"ping"`).
+   * Built-ins: `"ping"` | `"locateFlash"` | `"pulse"`.
+   */
+  defaultActivationAnimation?: ActivationAnimationType;
 }
 
 /**
@@ -74,6 +94,8 @@ export interface PageAnnotationEvents {
   styleChange: (style: ShapeStyle) => void;
   /** Fired when history state changes */
   historyChange: (state: { canUndo: boolean; canRedo: boolean }) => void;
+  /** Fired when selection changes (selected shape IDs) */
+  selectionChange: (selectedIds: string[]) => void;
 }
 
 export type PageAnnotationEventName = keyof PageAnnotationEvents;

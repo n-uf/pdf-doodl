@@ -10,7 +10,12 @@
  * - Text-highlight tool support via text layer capture
  */
 
-import type { DrawShape, DrawTool, ShapeStyle } from "@n-uf/pdf-doodl";
+import type {
+  ActivationAnimationType,
+  DrawShape,
+  DrawTool,
+  ShapeStyle,
+} from "@n-uf/pdf-doodl";
 import type { PageAnnotationController } from "@n-uf/pdf-doodl-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Document } from "react-pdf";
@@ -54,8 +59,14 @@ export interface PdfAnnotationViewerProps {
   style?: ShapeStyle;
   /** Whether annotations are enabled (default: true) */
   annotationsEnabled?: boolean;
-  /** Read-only mode */
+  /** Selection-only mode (draw/edit disabled; select still works) */
   readOnly?: boolean;
+  /** Allow activation-frame `ping()` animation (default: true) */
+  enablePing?: boolean;
+  /**
+   * Default `ping()` animation when `type` is omitted (default: `"ping"`).
+   */
+  defaultActivationAnimation?: ActivationAnimationType;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
   /** Callback when PDF loads */
@@ -107,6 +118,8 @@ interface ScrollModePageProps {
   shapes: DrawShape[];
   annotationsEnabled: boolean;
   readOnly: boolean;
+  enablePing: boolean;
+  defaultActivationAnimation: ActivationAnimationType;
   mergeHighlights: boolean;
   onShapesChange: (shapes: DrawShape[]) => void;
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
@@ -122,6 +135,8 @@ const ScrollModePage: React.FC<ScrollModePageProps> = ({
   shapes,
   annotationsEnabled,
   readOnly,
+  enablePing,
+  defaultActivationAnimation,
   mergeHighlights,
   onShapesChange,
   onHistoryChange,
@@ -138,6 +153,8 @@ const ScrollModePage: React.FC<ScrollModePageProps> = ({
         shapes={shapes}
         annotationsEnabled={annotationsEnabled}
         readOnly={readOnly}
+        enablePing={enablePing}
+        defaultActivationAnimation={defaultActivationAnimation}
         mergeHighlights={mergeHighlights}
         onShapesChange={onShapesChange}
         onHistoryChange={onHistoryChange}
@@ -186,6 +203,8 @@ export const PdfAnnotationViewer = React.forwardRef<
       style,
       annotationsEnabled = true,
       readOnly = false,
+      enablePing = true,
+      defaultActivationAnimation = "ping",
       mergeHighlights = true,
       onPdfLoad,
       onPdfError,
@@ -401,6 +420,8 @@ export const PdfAnnotationViewer = React.forwardRef<
                   shapes={effectiveAnnotations.get(pageNum) ?? []}
                   annotationsEnabled={annotationsEnabled}
                   readOnly={readOnly}
+                  enablePing={enablePing}
+                  defaultActivationAnimation={defaultActivationAnimation}
                   mergeHighlights={mergeHighlights}
                   onShapesChange={(shapes) =>
                     handleShapesChangeForPage(pageNum, shapes)
@@ -429,6 +450,8 @@ export const PdfAnnotationViewer = React.forwardRef<
               shapes={currentPageShapes}
               annotationsEnabled={annotationsEnabled}
               readOnly={readOnly}
+              enablePing={enablePing}
+              defaultActivationAnimation={defaultActivationAnimation}
               mergeHighlights={mergeHighlights}
               onShapesChange={handleShapesChange}
               onHistoryChange={onHistoryChange}

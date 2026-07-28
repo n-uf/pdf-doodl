@@ -13,13 +13,20 @@
  *
  * Font size must be multiplied by --total-scale-factor to scale with zoom.
  *
- * Import both this file AND react-pdf's base CSS:
- *   import "react-pdf/dist/Page/TextLayer.css";
+ * `@n-uf/pdf-doodl-pdf-react`'s `PdfAnnotationPage` imports react-pdf's
+ * `TextLayer.css` (absolute overlay + `color: transparent`). This file adds
+ * pdfjs-5 font scaling and keeps glyphs invisible/selectable as a safety net.
  */
 
 /* =============================================================================
  * TEXT LAYER SPANS - Apply CSS variables from PDF.js
  * ============================================================================= */
+
+.textLayer :is(span, br) {
+  /* Invisible but selectable / hit-testable (find, text-highlight) */
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
 
 .textLayer span {
   /* Font size scaled by total scale factor (base font-height * zoom) */

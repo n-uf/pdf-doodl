@@ -9,6 +9,7 @@
 import {
   createDoodl,
   DEFAULT_SHAPE_STYLE,
+  type ActivationAnimationType,
   type Doodl,
   type DrawShape,
   type DrawTool,
@@ -45,6 +46,9 @@ export class PageAnnotationController {
 
   // Options
   private _mergeHighlights: boolean;
+  private _readOnly: boolean;
+  private _enablePing: boolean;
+  private _defaultActivationAnimation: ActivationAnimationType;
 
   // Flag to prevent feedback loops during transform
   private _isTransforming = false;
@@ -63,6 +67,10 @@ export class PageAnnotationController {
     this._tool = options.initialTool ?? "select";
     this._style = options.initialStyle ?? { ...DEFAULT_SHAPE_STYLE };
     this._mergeHighlights = options.mergeHighlights ?? true;
+    this._readOnly = options.readOnly ?? false;
+    this._enablePing = options.enablePing ?? true;
+    this._defaultActivationAnimation =
+      options.defaultActivationAnimation ?? "ping";
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -96,6 +104,9 @@ export class PageAnnotationController {
       initialStyle: this._style,
       scale: this._scale, // CRITICAL: Pass scale for correct coordinate handling
       mergeHighlights: this._mergeHighlights,
+      readOnly: this._readOnly,
+      enablePing: this._enablePing,
+      defaultActivationAnimation: this._defaultActivationAnimation,
     });
 
     // Load existing shapes (page → canvas coords)
@@ -107,6 +118,9 @@ export class PageAnnotationController {
     this._doodl.on("styleChange", (style) => this._emit("styleChange", style));
     this._doodl.on("historyChange", (state) =>
       this._emit("historyChange", state)
+    );
+    this._doodl.on("selectionChange", (ids) =>
+      this._emit("selectionChange", ids)
     );
   }
 
@@ -350,10 +364,43 @@ export class PageAnnotationController {
 
   /**
    * Show a brief ping animation over a shape (expanding ring + glow).
-   * The effect is canvas-native, scale-aware, and self-cleaning.
+   * Activation-frame animation for locate/select flash.
+   * No-op when `enablePing` is false.
    */
   ping(shapeId: string, options?: PingOptions): void {
     this._doodl?.ping(shapeId, options);
+  }
+
+  /** Selection-only mode (draw/edit/drag/resize disabled; select still works) */
+  setReadOnly(readOnly: boolean): void {
+    this._readOnly = readOnly;
+    this._doodl?.setReadOnly(readOnly);
+  }
+
+  isReadOnly(): boolean {
+    return this._doodl?.isReadOnly() ?? this._readOnly;
+  }
+
+  /** Enable/disable activation-frame `ping()` animation */
+  setEnablePing(enablePing: boolean): void {
+    this._enablePing = enablePing;
+    this._doodl?.setEnablePing(enablePing);
+  }
+
+  isPingEnabled(): boolean {
+    return this._doodl?.isPingEnabled() ?? this._enablePing;
+  }
+
+  setDefaultActivationAnimation(type: ActivationAnimationType): void {
+    this._defaultActivationAnimation = type;
+    this._doodl?.setDefaultActivationAnimation(type);
+  }
+
+  getDefaultActivationAnimation(): ActivationAnimationType {
+    return (
+      this._doodl?.getDefaultActivationAnimation() ??
+      this._defaultActivationAnimation
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════

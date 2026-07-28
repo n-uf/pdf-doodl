@@ -22,6 +22,9 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "pdfjs-dist": "5.7.284"
+    }
   }
 }

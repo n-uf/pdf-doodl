@@ -7,15 +7,34 @@
  * - react-pdf Page component for PDF rendering
  * - PageAnnotationLayer from doodl-react for annotation canvas
  * - Text layer capture for text-highlight tool
+ *
+ * Text-layer CSS: react-pdf's `TextLayer.css` is imported here so every
+ * consumer gets invisible-but-selectable text (`color: transparent`) and
+ * absolute positioning (`inset: 0`) matching the PDF canvas. Without it,
+ * spans paint as a mis-scaled ghost layer and annotation overlays diverge.
+ * `@n-uf/pdf-doodl-react`'s text-layer.css (font-size / --total-scale-factor)
+ * is pulled in via PageAnnotationLayer.
  */
 
-import type { DrawShape, DrawTool, ShapeStyle } from "@n-uf/pdf-doodl";
+import {
+  registerBuiltinShapes,
+  type ActivationAnimationType,
+  type DrawShape,
+  type DrawTool,
+  type ShapeStyle,
+} from "@n-uf/pdf-doodl";
 import {
   PageAnnotationLayer,
   type PageAnnotationController,
 } from "@n-uf/pdf-doodl-react";
+
+// PdfAnnotationPage is a common exclusive import path — keep shapes registered
+// even when consumers never import from @n-uf/pdf-doodl directly.
+registerBuiltinShapes();
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Page } from "react-pdf";
+// Side-effect: transparent, page-sized text layer for find/selection.
+import "react-pdf/dist/Page/TextLayer.css";
 import type { PageDimensions, PageRenderResult } from "../types";
 
 // =============================================================================
@@ -35,8 +54,21 @@ export interface PdfAnnotationPageProps {
   style?: ShapeStyle;
   /** Whether annotations are enabled (default: true) */
   annotationsEnabled?: boolean;
-  /** Read-only mode */
+  /**
+   * Selection-only mode (default: false).
+   * Disables draw/edit/drag/resize; pointer selection still works.
+   */
   readOnly?: boolean;
+  /**
+   * Allow activation-frame `ping()` animation (default: true).
+   * When false, `ping()` is a no-op (locate/select still work).
+   */
+  enablePing?: boolean;
+  /**
+   * Default `ping()` animation when `type` is omitted (default: `"ping"`).
+   * Built-ins: `"ping"` | `"locateFlash"` | `"pulse"`.
+   */
+  defaultActivationAnimation?: ActivationAnimationType;
   /** Merge overlapping text highlight rects (default: true) */
   mergeHighlights?: boolean;
   /** Callback when shapes change */
@@ -89,6 +121,8 @@ export const PdfAnnotationPage: React.FC<PdfAnnotationPageProps> = ({
   style,
   annotationsEnabled = true,
   readOnly = false,
+  enablePing = true,
+  defaultActivationAnimation = "ping",
   mergeHighlights = true,
   onShapesChange,
   onHistoryChange,
@@ -174,7 +208,10 @@ export const PdfAnnotationPage: React.FC<PdfAnnotationPageProps> = ({
           tool={tool}
           style={style}
           shapes={shapes}
-          enabled={!readOnly}
+          enabled
+          readOnly={readOnly}
+          enablePing={enablePing}
+          defaultActivationAnimation={defaultActivationAnimation}
           mergeHighlights={mergeHighlights}
           onShapesChange={onShapesChange}
           onHistoryChange={onHistoryChange}

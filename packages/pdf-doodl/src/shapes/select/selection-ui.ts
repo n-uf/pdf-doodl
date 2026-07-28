@@ -6,7 +6,7 @@
  */
 
 import type { Bounds, DrawShape, Point } from "../../types";
-import { getShapeBounds } from "../../types";
+import { getShapeBounds, isEditable } from "../../types";
 import { isPointInBounds, mergeBounds } from "../common/utils/geometry";
 import { snapToPixel, snapToPixelFloor } from "../common/utils/canvas";
 
@@ -204,14 +204,17 @@ export function renderHandlesForBounds(
 }
 
 /**
- * Render complete selection (outline + handles) for a shape
+ * Render complete selection (outline + handles) for a shape.
+ * Non-editable shapes get outline only (no resize chrome).
  */
 export function renderSelection(
   ctx: CanvasRenderingContext2D,
   shape: DrawShape
 ): void {
   renderSelectionOutline(ctx, shape);
-  renderSelectionHandles(ctx, shape);
+  if (isEditable(shape.behavior)) {
+    renderSelectionHandles(ctx, shape);
+  }
 }
 
 /**

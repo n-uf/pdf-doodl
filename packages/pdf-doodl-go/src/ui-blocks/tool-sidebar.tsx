@@ -69,7 +69,7 @@ export const ToolSidebar: React.FC<ToolSidebarProps> = ({
               onClick={() => onToolChange(tool.id)}
               className={`
                 w-full aspect-square flex flex-col items-center justify-center gap-1.5
-                border transition-all duration-100 rounded-sm
+                border outline-none transition-all duration-100 rounded-sm
                 ${
                   isActive
                     ? `${accent.bg} ${accent.border} text-black`

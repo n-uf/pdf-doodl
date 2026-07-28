@@ -5,6 +5,11 @@
  * rendering, hit-testing, handlers, and movement logic.
  */
 
+// Register first-party shapes before any consumer can call setShapes/getShapeModule.
+import { registerBuiltinShapes } from "./src/shapes/register-builtins";
+registerBuiltinShapes();
+export { registerBuiltinShapes } from "./src/shapes/register-builtins";
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -32,7 +37,14 @@ export {
   REDACT_HIGHLIGHT_STYLE,
   REDACT_ZONE_STYLE,
 } from "./src/types/style";
-export type { BlendMode, ShapeStyle } from "./src/types/style";
+export type {
+  BlendMode,
+  ShapeOutline,
+  ShapeOutlineGlow,
+  ShapeShadow,
+  ShapeStyle,
+  StrokeAlign,
+} from "./src/types/style";
 
 // Behavior
 export {
@@ -348,7 +360,11 @@ export type {
 } from "./src/drivers";
 
 // Keyboard Driver
-export { KeyboardDriver, createKeyboardDriver } from "./src/drivers";
+export {
+  KeyboardDriver,
+  createKeyboardDriver,
+  isEditableKeyboardTarget,
+} from "./src/drivers";
 export type {
   KeyboardCommand,
   KeyboardDriverCallbacks,
@@ -398,5 +414,20 @@ export {
 // DOODL (main API)
 // =============================================================================
 
-export { Doodl, createDoodl } from "./src/doodl";
-export type { DoodlEvents, DoodlOptions, PingOptions } from "./src/doodl";
+export {
+  Doodl,
+  createDoodl,
+  defaultColorForAnimation,
+  defaultDurationForAnimation,
+  getActivationAnimationRenderer,
+  registerActivationAnimation,
+} from "./src/doodl";
+export type {
+  ActivationAnimationFrame,
+  ActivationAnimationRenderer,
+  ActivationAnimationType,
+  BuiltinActivationAnimation,
+  DoodlEvents,
+  DoodlOptions,
+  PingOptions,
+} from "./src/doodl";
