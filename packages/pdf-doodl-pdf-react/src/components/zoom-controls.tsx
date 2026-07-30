@@ -43,8 +43,16 @@ export interface ZoomControlsProps {
   labelClassName?: string;
   /** Show the cycling fit control (default: true) */
   showFit?: boolean;
-  /** Mode shown (and applied) on the first fit click. Default: `"width"`. */
+  /**
+   * Fit mode shown on the control and used as the first cycle / optional
+   * auto-apply target. Default: `"width"`.
+   */
   initialFitMode?: PdfFitMode;
+  /**
+   * When true, apply {@link ZoomControlsProps.initialFitMode} once the
+   * viewport can measure a fit (page size + container size). Default: false.
+   */
+  applyInitialFit?: boolean;
 }
 
 const DEFAULT_BUTTON_CLASS =
@@ -57,10 +65,12 @@ export function ZoomControls({
   labelClassName = "",
   showFit = true,
   initialFitMode = "width",
+  applyInitialFit = false,
 }: ZoomControlsProps): ReactElement {
   const { scale, zoomIn, zoomOut, resetZoom, atMinZoom, atMaxZoom } = viewport;
   const fit = useCyclingFitMode(viewport, {
     initialMode: initialFitMode,
+    applyInitialFit,
   });
   const { descriptor, canFit, cycleFit, isActive } = fit;
   const fitTitle = fitCycleTitleFromReturn(fit);

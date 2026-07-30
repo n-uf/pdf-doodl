@@ -46,6 +46,8 @@ function isValidOutline(value: unknown): boolean {
     strokeOpacity?: unknown;
     strokeDash?: unknown;
     glow?: unknown;
+    style?: unknown;
+    armLength?: unknown;
   };
   if (typeof outline.stroke !== "string") return false;
   if (
@@ -55,6 +57,16 @@ function isValidOutline(value: unknown): boolean {
     return false;
   }
   if (outline.offset !== undefined && typeof outline.offset !== "number") {
+    return false;
+  }
+  if (
+    outline.style !== undefined &&
+    outline.style !== "ring" &&
+    outline.style !== "corner-bracket"
+  ) {
+    return false;
+  }
+  if (outline.armLength !== undefined && typeof outline.armLength !== "number") {
     return false;
   }
   if (

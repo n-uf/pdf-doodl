@@ -26,6 +26,7 @@ export type {
   BlendMode,
   ShapeOutline,
   ShapeOutlineGlow,
+  ShapeOutlineStyle,
   ShapeShadow,
   ShapeStyle,
   StrokeAlign,
@@ -35,7 +36,6 @@ export type {
 export {
   DEFAULT_BEHAVIOR,
   DEFAULT_BEHAVIOR_PRESET,
-  SHAPE_BEHAVIORS,
   extendBehavior,
   getStyleMode,
   getZOrder,
@@ -45,6 +45,7 @@ export {
   isSelectable,
   isTracked,
   resolveBehavior,
+  SHAPE_BEHAVIORS,
 } from "./behavior";
 export type {
   ShapeBehavior,
@@ -58,24 +59,33 @@ export { DEFAULT_MODIFIERS } from "./input";
 export type { DrawModifiers } from "./input";
 
 // Tools (client-facing config)
-export { TOOL_CONFIGS, getToolConfig } from "../tools";
+export { getToolConfig, TOOL_CONFIGS } from "../tools";
 export type { DrawTool, ToolConfig } from "../tools";
 
 // Shapes (types, factories, utilities)
 export type {
+  CreateInkBracketShapesOptions,
   DrawShape,
   EllipseShape,
+  FreehandPathMode,
   FreehandShape,
+  InkBracketBounds,
   PolygonShape,
   RectShape,
+  UnderlineAlign,
+  UnderlineBelowRectOptions,
+  UnderlineRect,
 } from "../shapes";
 
 export {
   createEllipseShape,
   createFreehandShape,
+  createInkBracketShapes,
   createPolygonShape,
+  createPolylineShape,
   createRectShape,
   generateShapeId,
+  underlineBelowRect,
   getEllipseBounds,
   getFreehandBounds,
   getPolygonBounds,
@@ -95,10 +105,10 @@ export type {
 } from "./state";
 
 export {
-  DRAWING_STATE_VERSION,
   createEmptySelection,
   createEmptyState,
   createIdleDrawingState,
+  DRAWING_STATE_VERSION,
 } from "./state";
 
 // Performance

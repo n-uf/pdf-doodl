@@ -8,16 +8,23 @@
  * so the label always agrees with the scale on screen (avoids reading
  * “height” while the page is still width-fitted).
  *
+ * With {@link UseCyclingFitModeOptions.applyInitialFit}, `initialMode`
+ * is applied once the viewport can measure a fit (default off — label-only
+ * until the first click).
+ *
  * `isActive` is true only while the current zoom still matches that mode’s
  * computed fit scale (within {@link PDF_FIT_SCALE_EPSILON}). Manual zoom
  * turns the LED off without changing the label.
  */
 
-import { useCallback, useState, type CSSProperties } from "react";
 import {
-  isFitScaleActive,
-  PDF_FIT_SCALE_EPSILON,
-} from "./fit-scale";
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import { isFitScaleActive, PDF_FIT_SCALE_EPSILON } from "./fit-scale";
 import type { UsePdfViewportScaleReturn } from "./use-pdf-viewport-scale";
 
 export type PdfFitMode = "width" | "height" | "page";
@@ -53,7 +60,9 @@ const FIT_MODE_DESCRIPTORS: Record<PdfFitMode, PdfFitModeDescriptor> = {
   },
 };
 
-export function getPdfFitModeDescriptor(mode: PdfFitMode): PdfFitModeDescriptor {
+export function getPdfFitModeDescriptor(
+  mode: PdfFitMode,
+): PdfFitModeDescriptor {
   return FIT_MODE_DESCRIPTORS[mode];
 }
 
@@ -178,8 +187,10 @@ export type CyclingFitViewport = Pick<
 
 export interface UseCyclingFitModeOptions {
   /**
-   * Mode applied (and shown) on the first click. Default: `"width"`.
-   * Until the first click, the control shows this as the pending fit.
+   * Mode applied (and shown) on the first click — and, when
+   * {@link UseCyclingFitModeOptions.applyInitialFit} is set, on first ready
+   * layout. Default: `"width"`.
+   * Until applied, the control shows this as the pending fit.
    */
   initialMode?: PdfFitMode;
   /**
@@ -187,6 +198,12 @@ export interface UseCyclingFitModeOptions {
    * Default: {@link PDF_FIT_SCALE_EPSILON}.
    */
   activeEpsilon?: number;
+  /**
+   * Apply {@link UseCyclingFitModeOptions.initialMode} once the viewport can
+   * compute a fit scale (page size known and container has measurable size).
+   * Default: `false` (label-only until the first click).
+   */
+  applyInitialFit?: boolean;
 }
 
 export interface UseCyclingFitModeReturn {
@@ -211,10 +228,7 @@ export interface UseCyclingFitModeReturn {
 
 function applyFitMode(
   mode: PdfFitMode,
-  viewport: Pick<
-    CyclingFitViewport,
-    "fitWidth" | "fitHeight" | "fitPage"
-  >,
+  viewport: Pick<CyclingFitViewport, "fitWidth" | "fitHeight" | "fitPage">,
 ): void {
   switch (mode) {
     case "width":
@@ -233,10 +247,14 @@ export function useCyclingFitMode(
   viewport: CyclingFitViewport,
   options: UseCyclingFitModeOptions = {},
 ): UseCyclingFitModeReturn {
-  const { initialMode = "width", activeEpsilon = PDF_FIT_SCALE_EPSILON } =
-    options;
+  const {
+    initialMode = "width",
+    activeEpsilon = PDF_FIT_SCALE_EPSILON,
+    applyInitialFit = false,
+  } = options;
   const [lastApplied, setLastApplied] = useState<PdfFitMode | null>(null);
   const { fitWidth, fitHeight, fitPage, canFit, scale, getFitScale } = viewport;
+  const seededRef = useRef(false);
 
   const mode = lastApplied ?? initialMode;
   const nextMode =
@@ -246,14 +264,54 @@ export function useCyclingFitMode(
 
   const targetScale = getFitScale(mode);
   const isActive =
-    targetScale !== null &&
-    isFitScaleActive(scale, targetScale, activeEpsilon);
+    targetScale !== null && isFitScaleActive(scale, targetScale, activeEpsilon);
+
+  // Apply the advertised default fit once layout can measure (container may
+  // still be 0×0 on the first paint after pageSize arrives).
+  useLayoutEffect(() => {
+    if (!applyInitialFit || seededRef.current || !canFit) return;
+
+    let cancelled = false;
+    let frames = 0;
+    const MAX_FRAMES = 60;
+
+    const trySeed = (): boolean => {
+      if (cancelled || seededRef.current) return true;
+      if (getFitScale(initialMode) === null) return false;
+      applyFitMode(initialMode, { fitWidth, fitHeight, fitPage });
+      setLastApplied(initialMode);
+      seededRef.current = true;
+      return true;
+    };
+
+    if (trySeed()) return;
+
+    let raf = 0;
+    const tick = (): void => {
+      if (trySeed() || frames++ >= MAX_FRAMES) return;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [
+    applyInitialFit,
+    canFit,
+    initialMode,
+    getFitScale,
+    fitWidth,
+    fitHeight,
+    fitPage,
+  ]);
 
   const cycleFit = useCallback(() => {
     const toApply =
       lastApplied === null ? initialMode : nextPdfFitMode(lastApplied);
     applyFitMode(toApply, { fitWidth, fitHeight, fitPage });
     setLastApplied(toApply);
+    seededRef.current = true;
   }, [lastApplied, initialMode, fitWidth, fitHeight, fitPage]);
 
   return {

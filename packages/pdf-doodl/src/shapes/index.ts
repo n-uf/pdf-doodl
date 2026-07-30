@@ -9,6 +9,11 @@ export { registerBuiltinShapes } from "./register-builtins";
 // =============================================================================
 
 export {
+  // Stroke / screen-space / alignment
+  alignedEllipseRadii,
+  alignedStrokeRect,
+  applyShapeShadow,
+  applyStrokePaint,
   applyStyle,
   BaseController,
   // Text intersection utilities (bounds → text)
@@ -50,6 +55,7 @@ export {
   getShapeModule,
   getShapeModuleByType,
   getShapePosition,
+  getShapeRenderContext,
   getShapeTypes,
   getTextFromSpans,
   getTextNodes,
@@ -58,6 +64,7 @@ export {
   hasTextInTextLayer,
   hasValidDrawShape,
   hitTestShape,
+  inflateRect,
   isMultiClickController,
   isPointInBounds,
   isPointInShape,
@@ -82,6 +89,9 @@ export {
   // Behavior-aware rendering
   renderShapeWithBehavior,
   resetStyle,
+  resolveStyleLength,
+  runWithShapeRenderContext,
+  setShapeRenderContext,
   shapeSupportsEditMode,
   // Shape capability checks
   shapeWantsCapturedText,
@@ -90,18 +100,8 @@ export {
   snapRectToPixel,
   snapToPixel,
   snapToPixelFloor,
-  // Stroke / screen-space / alignment
-  alignedEllipseRadii,
-  alignedStrokeRect,
-  applyShapeShadow,
-  applyStrokePaint,
-  getShapeRenderContext,
-  inflateRect,
-  resolveStyleLength,
-  runWithShapeRenderContext,
-  setShapeRenderContext,
-  styleRenderPadding,
   sortShapesByBehavior,
+  styleRenderPadding,
   transformShape,
 } from "./common";
 
@@ -191,6 +191,8 @@ export {
   createFreehandController,
   createFreehandShape,
   createHighlightController,
+  createInkBracketShapes,
+  createPolylineShape,
   DEFAULT_EPSILON,
   FreehandController,
   getFreehandBounds,
@@ -205,8 +207,17 @@ export {
   simplifyPathWithMinPoints,
   smoothPath,
   transformFreehand,
+  underlineBelowRect,
 } from "./freehand";
-export type { FreehandShape } from "./freehand";
+export type {
+  CreateInkBracketShapesOptions,
+  FreehandPathMode,
+  FreehandShape,
+  InkBracketBounds,
+  UnderlineAlign,
+  UnderlineBelowRectOptions,
+  UnderlineRect,
+} from "./freehand";
 
 // =============================================================================
 // TEXT

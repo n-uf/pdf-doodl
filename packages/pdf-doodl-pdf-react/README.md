@@ -10,6 +10,23 @@ pnpm add @n-uf/pdf-doodl-pdf-react @n-uf/pdf-doodl @n-uf/pdf-doodl-react react r
 
 Import browser-only components via dynamic import to avoid SSR issues.
 
+## PDF.js worker (CDN)
+
+`react-pdf` needs `pdfjs.GlobalWorkerOptions.workerSrc` set to a worker whose
+version matches `pdfjs-dist`. Bundler `?url` worker imports are brittle, so use
+the shared helper (version-pinned jsDelivr CDN) instead of hand-rolling the URL:
+
+```ts
+import { configureDefaultPdfWorker } from "@n-uf/pdf-doodl-pdf-react/components";
+
+configureDefaultPdfWorker(); // idempotent; call once before rendering a PDF
+```
+
+It only sets `workerSrc` when unset or still on react-pdf/pdf.js placeholders
+like `pdf.worker.mjs` (pass `{ force: true }` to override a real URL, or
+`{ version }` to pin a specific build). `pdfWorkerCdnUrl(version?)` returns the
+URL without mutating global state.
+
 ## Tailwind v4: `@source` class tokens
 
 Exported chrome tokens (`PDF_ZOOM_PERCENT_BUTTON_CLASS`, `PDF_ZOOM_STEP_BUTTON_CLASS`,

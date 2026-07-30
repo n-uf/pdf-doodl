@@ -41,6 +41,7 @@ export type {
   BlendMode,
   ShapeOutline,
   ShapeOutlineGlow,
+  ShapeOutlineStyle,
   ShapeShadow,
   ShapeStyle,
   StrokeAlign,
@@ -90,9 +91,12 @@ export type {
 
 // Concrete shape types
 export type {
+  CreateInkBracketShapesOptions,
   EllipseShape,
+  FreehandPathMode,
   FreehandShape,
   HighlightMergeOptions,
+  InkBracketBounds,
   MarkerSettings,
   PolygonShape,
   RectShape,
@@ -101,17 +105,22 @@ export type {
   TextHighlightAnchor,
   TextHighlightShape,
   TextShape,
+  UnderlineAlign,
+  UnderlineBelowRectOptions,
+  UnderlineRect,
 } from "./src/shapes";
 
 export {
-  DEFAULT_MARKER_SETTINGS,
-  DEFAULT_TEXT_HIGHLIGHT_STYLE,
   createEllipseShape,
   createFreehandShape,
+  createInkBracketShapes,
   createPolygonShape,
+  createPolylineShape,
   createRectShape,
   createTextHighlightShape,
   createTextShape,
+  DEFAULT_MARKER_SETTINGS,
+  DEFAULT_TEXT_HIGHLIGHT_STYLE,
   getEllipseBounds,
   getFreehandBounds,
   getPolygonBounds,
@@ -122,6 +131,7 @@ export {
   mergeHighlightRects,
   resetMarkerSettings,
   setMarkerSettings,
+  underlineBelowRect,
 } from "./src/shapes";
 
 // Tools (client-facing config)
@@ -153,10 +163,10 @@ export type {
 } from "./src/types/state";
 
 export {
-  DRAWING_STATE_VERSION,
   createEmptySelection,
   createEmptyState,
   createIdleDrawingState,
+  DRAWING_STATE_VERSION,
 } from "./src/types/state";
 
 // =============================================================================
@@ -169,6 +179,12 @@ export {
   enforceShapeBounds,
   extractShapeText,
   fillBackground,
+  // Behavior filtering
+  filterDeletableShapes,
+  filterEditableShapes,
+  filterPersistedShapes,
+  filterSelectableShapes,
+  filterTrackedShapes,
   findShapesAtPoint,
   findTopmostShapeAtPoint,
   getShapeBounds,
@@ -176,24 +192,18 @@ export {
   getShapePosition,
   hitTestShape,
   isPointInShape,
-  isValidShape,
-  renderShape,
-  renderShapes,
-  transformShape,
-  // Behavior-aware rendering
-  renderShapeWithBehavior,
-  renderShapesWithBehavior,
-  sortShapesByBehavior,
-  // Behavior filtering
-  filterDeletableShapes,
-  filterEditableShapes,
-  filterPersistedShapes,
-  filterSelectableShapes,
-  filterTrackedShapes,
   // Behavior checks (per-shape)
   isShapeDeletable,
   isShapeEditable,
   isShapeSelectable,
+  isValidShape,
+  renderShape,
+  renderShapes,
+  renderShapesWithBehavior,
+  // Behavior-aware rendering
+  renderShapeWithBehavior,
+  sortShapesByBehavior,
+  transformShape,
 } from "./src/shapes";
 export type {
   ExtractedText,
@@ -204,12 +214,11 @@ export type {
 
 // Common utilities
 export {
-  BaseController,
-  DEFAULT_STROKE_TOLERANCE,
-  NO_ACTION,
   applyStyle,
+  BaseController,
   boundsToEllipse,
   calculateDrawingBounds,
+  DEFAULT_STROKE_TOLERANCE,
   distanceBetweenPoints,
   distanceToLineSegment,
   // Text bounds finder (text → bounds)
@@ -219,26 +228,27 @@ export {
   isPointInBounds,
   mapBlendMode,
   mergeBounds,
+  NO_ACTION,
   resetStyle,
 } from "./src/shapes";
 export type { FindTextOptions, TextMatch } from "./src/shapes";
 
 // Rect
 export {
-  isRectShape,
-  RectController,
   createRectController,
   getRectPosition,
   hitTestRect,
   hitTestRectStroke,
+  isRectShape,
+  RectController,
   renderRect,
   transformRect,
 } from "./src/shapes";
 
 // Ellipse
 export {
-  EllipseController,
   createEllipseController,
+  EllipseController,
   getEllipsePosition,
   hitTestEllipse,
   hitTestEllipseStroke,
@@ -248,21 +258,21 @@ export {
 
 // Polygon
 export {
-  PolygonController,
   createPolygonController,
   getPolygonPosition,
   hitTestPolygon,
   hitTestPolygonStroke,
+  PolygonController,
   renderPolygon,
   transformPolygon,
 } from "./src/shapes";
 
 // Freehand
 export {
-  DEFAULT_EPSILON,
-  FreehandController,
   createFreehandController,
   createHighlightController,
+  DEFAULT_EPSILON,
+  FreehandController,
   getFreehandPosition,
   getPathLength,
   hitTestFreehandFill,
@@ -277,14 +287,6 @@ export {
 
 // Select (controller + UI + transform)
 export {
-  HANDLE_BORDER_COLOR,
-  HANDLE_BORDER_WIDTH,
-  HANDLE_FILL_COLOR,
-  HANDLE_SIZE,
-  SELECTION_OUTLINE_COLOR,
-  SELECTION_OUTLINE_DASH,
-  SELECTION_OUTLINE_WIDTH,
-  SelectController,
   // Transform utilities
   applyScale,
   applyTransform,
@@ -298,6 +300,10 @@ export {
   getCombinedBounds,
   getHandleCursor,
   getHandlePositions,
+  HANDLE_BORDER_COLOR,
+  HANDLE_BORDER_WIDTH,
+  HANDLE_FILL_COLOR,
+  HANDLE_SIZE,
   hitTestHandle,
   renderHandlesForBounds,
   renderMultiSelection,
@@ -305,6 +311,10 @@ export {
   renderSelectionBounds,
   renderSelectionHandles,
   renderSelectionOutline,
+  SelectController,
+  SELECTION_OUTLINE_COLOR,
+  SELECTION_OUTLINE_DASH,
+  SELECTION_OUTLINE_WIDTH,
 } from "./src/shapes";
 export type {
   HandlePosition,
@@ -328,10 +338,10 @@ export {
 
 // Text utilities
 export {
+  buildFontString,
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
   DEFAULT_TEXT_STYLE,
-  buildFontString,
   measureTextWidth,
 } from "./src/shapes";
 
@@ -352,7 +362,7 @@ export {
 // =============================================================================
 
 // History Driver
-export { HistoryDriver, createHistoryDriver } from "./src/drivers";
+export { createHistoryDriver, HistoryDriver } from "./src/drivers";
 export type {
   HistoryChangeCallback,
   HistoryDriverOptions,
@@ -361,9 +371,9 @@ export type {
 
 // Keyboard Driver
 export {
-  KeyboardDriver,
   createKeyboardDriver,
   isEditableKeyboardTarget,
+  KeyboardDriver,
 } from "./src/drivers";
 export type {
   KeyboardCommand,
@@ -372,11 +382,11 @@ export type {
 } from "./src/drivers";
 
 // Mouse Driver (legacy)
-export { MouseDriver, createMouseDriver } from "./src/drivers";
+export { createMouseDriver, MouseDriver } from "./src/drivers";
 export type { MouseDriverCallbacks, MouseDriverOptions } from "./src/drivers";
 
 // Pointer Driver (unified input: mouse, touch, pen)
-export { PointerDriver, createPointerDriver } from "./src/drivers";
+export { createPointerDriver, PointerDriver } from "./src/drivers";
 export type {
   PointerDriverCallbacks,
   PointerDriverOptions,
@@ -384,11 +394,11 @@ export type {
 } from "./src/drivers";
 
 // Render Driver
-export { RenderDriver, createRenderDriver } from "./src/drivers";
+export { createRenderDriver, RenderDriver } from "./src/drivers";
 export type { RenderDriverOptions, RenderStateProvider } from "./src/drivers";
 
 // Selection Driver (DOM text selection for text-highlight tool)
-export { SelectionDriver, createSelectionDriver } from "./src/drivers";
+export { createSelectionDriver, SelectionDriver } from "./src/drivers";
 export type {
   SelectionDriverCallbacks,
   SelectionDriverOptions,
@@ -396,7 +406,6 @@ export type {
 
 // State Driver (validation, serialization, utilities)
 export {
-  StateError,
   cloneState,
   createFromShapes,
   deserializeFromObject,
@@ -408,6 +417,7 @@ export {
   repairState,
   serializeState,
   serializeToObject,
+  StateError,
 } from "./src/drivers";
 
 // =============================================================================
@@ -415,10 +425,10 @@ export {
 // =============================================================================
 
 export {
-  Doodl,
   createDoodl,
   defaultColorForAnimation,
   defaultDurationForAnimation,
+  Doodl,
   getActivationAnimationRenderer,
   registerActivationAnimation,
 } from "./src/doodl";

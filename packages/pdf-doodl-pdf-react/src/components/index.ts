@@ -38,3 +38,10 @@ export {
 // When Document and Page come from the same module instance, React context works
 export { Document as PdfDocument, pdfjs } from "react-pdf";
 
+// Default PDF.js worker configuration (version-pinned jsDelivr CDN)
+export {
+  configureDefaultPdfWorker,
+  pdfWorkerCdnUrl,
+  type ConfigureDefaultPdfWorkerOptions,
+} from "./pdf-worker";
+

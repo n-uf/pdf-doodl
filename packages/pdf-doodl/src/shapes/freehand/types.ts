@@ -9,8 +9,15 @@ import type { DrawShape } from "../common/registry";
 import { generateShapeId } from "../common/registry";
 
 /**
+ * How freehand vertices are connected when painted.
+ * - `"smooth"` (default) — quadratic mid-point curves (pen look).
+ * - `"linear"` — straight segments between vertices (sharp corners / polylines).
+ */
+export type FreehandPathMode = "smooth" | "linear";
+
+/**
  * Freehand shape
- * Smooth path with optional closure
+ * Path with optional closure; default render uses smooth curves.
  */
 export interface FreehandShape extends DrawShape {
   type: "freehand";
@@ -18,6 +25,11 @@ export interface FreehandShape extends DrawShape {
   points: Point[];
   /** Whether the path is closed */
   closed: boolean;
+  /**
+   * Vertex connection mode. Omitted / `"smooth"` keeps historical pen curves;
+   * `"linear"` draws sharp polylines (brackets, markers, technical chrome).
+   */
+  pathMode?: FreehandPathMode;
 }
 
 /**
@@ -26,13 +38,35 @@ export interface FreehandShape extends DrawShape {
 export function createFreehandShape(
   points: Point[],
   closed: boolean = false,
-  style: ShapeStyle = DEFAULT_SHAPE_STYLE
+  style: ShapeStyle = DEFAULT_SHAPE_STYLE,
+  pathMode: FreehandPathMode = "smooth",
 ): FreehandShape {
   return {
     id: generateShapeId(),
     type: "freehand",
     points: [...points],
     closed,
+    style,
+    ...(pathMode === "smooth" ? {} : { pathMode }),
+  };
+}
+
+/**
+ * Create a sharp polyline (freehand with {@link FreehandPathMode} `"linear"`).
+ * Prefer this over 2-point freehand segments when you need multi-vertex
+ * corners (L-brackets, underlines with joins, etc.).
+ */
+export function createPolylineShape(
+  points: Point[],
+  style: ShapeStyle = DEFAULT_SHAPE_STYLE,
+  options: { closed?: boolean; id?: string } = {},
+): FreehandShape {
+  return {
+    id: options.id ?? generateShapeId(),
+    type: "freehand",
+    points: [...points],
+    closed: options.closed ?? false,
+    pathMode: "linear",
     style,
   };
 }

@@ -3,13 +3,21 @@
  */
 
 export {
-  FreehandController,
+  createInkBracketShapes,
+  type CreateInkBracketShapesOptions,
+  type InkBracketBounds,
+  underlineBelowRect,
+  type UnderlineAlign,
+  type UnderlineBelowRectOptions,
+  type UnderlineRect,
+} from "./chrome";
+export {
   createFreehandController,
   createHighlightController,
+  FreehandController,
 } from "./controller";
 export { hitTestFreehandFill, hitTestFreehandStroke } from "./hit-test";
 export { FREEHAND_MODULE } from "./module";
-export { getFreehandPosition, transformFreehand } from "./transform";
 export { renderFreehand } from "./render";
 export {
   DEFAULT_EPSILON,
@@ -19,6 +27,11 @@ export {
   simplifyPathWithMinPoints,
   smoothPath,
 } from "./simplification";
-export { createFreehandShape, getFreehandBounds } from "./types";
-export type { FreehandShape } from "./types";
+export { getFreehandPosition, transformFreehand } from "./transform";
+export {
+  createFreehandShape,
+  createPolylineShape,
+  getFreehandBounds,
+} from "./types";
+export type { FreehandPathMode, FreehandShape } from "./types";
 export { isValidFreehand } from "./validate";

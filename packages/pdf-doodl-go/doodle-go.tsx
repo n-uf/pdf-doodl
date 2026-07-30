@@ -24,11 +24,12 @@ import {
   PDF_FIT_CYCLE_LABEL_CLASS,
   PDF_FIT_CYCLE_LED_OFF_CLASS,
   PDF_FIT_CYCLE_LED_ON_CLASS,
-  PDF_ZOOM_PERCENT_BUTTON_CLASS,
   PDF_TEXT_LAYER_SELECTOR,
+  PDF_ZOOM_PERCENT_BUTTON_CLASS,
   useCyclingFitMode,
   usePdfFind,
   usePdfViewportScale,
+  type PdfFitMode,
 } from "@n-uf/pdf-doodl-pdf-react";
 import { FindBar } from "@n-uf/pdf-doodl-pdf-react/components";
 import {
@@ -90,6 +91,24 @@ export interface DoodleGoProps {
   initialTool?: DrawTool;
   /** Initial PDF source (URL or File) - defaults to sample PDF */
   initialPdfSource?: PdfSource;
+  /**
+   * PDF fit mode for the cycle control (and optional auto-apply).
+   * Default: `"width"`. Ignored when {@link DoodleGoProps.initialPdfScale}
+   * is set and {@link DoodleGoProps.applyInitialFit} is false.
+   */
+  initialFitMode?: PdfFitMode;
+  /**
+   * Apply {@link DoodleGoProps.initialFitMode} once the PDF viewport can
+   * measure. Default: `false` (scale stays at
+   * {@link DoodleGoProps.initialPdfScale} / 1 until the fit control is used).
+   */
+  applyInitialFit?: boolean;
+  /**
+   * Fixed initial zoom factor before any fit is applied. Default: `1`.
+   * Prefer {@link DoodleGoProps.initialFitMode} +
+   * {@link DoodleGoProps.applyInitialFit} for viewport-relative defaults.
+   */
+  initialPdfScale?: number;
   /** Callback when shapes change */
   onShapesChange?: (shapes: DrawShape[]) => void;
   /** Callback when mode changes */
@@ -170,6 +189,9 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       initialMode = "text",
       initialTool = "select",
       initialPdfSource = DEFAULT_PDF_SOURCE,
+      initialFitMode = "width",
+      applyInitialFit = false,
+      initialPdfScale = 1,
       onShapesChange,
       onModeChange,
       title = "DOODL",
@@ -180,7 +202,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       mergeHighlights = true,
       className = "",
     },
-    ref
+    ref,
   ) => {
     const {
       tokens: t,
@@ -235,6 +257,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
     const pdfViewport = usePdfViewportScale({
       pageSize: pdfDimensions,
       containerRef: canvasContainerRef,
+      initialScale: initialPdfScale,
     });
     const {
       scale: pdfScale,
@@ -242,7 +265,10 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       zoomOut: handleZoomOut,
       resetZoom: handleZoomReset,
     } = pdfViewport;
-    const fitCycle = useCyclingFitMode(pdfViewport);
+    const fitCycle = useCyclingFitMode(pdfViewport, {
+      initialMode: initialFitMode,
+      applyInitialFit,
+    });
     const {
       descriptor: fitDescriptor,
       nextDescriptor: fitNextDescriptor,
@@ -267,20 +293,17 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         pdfViewMode === "single"
           ? [pdfCurrentPage]
           : Array.from({ length: pdfTotalPages }, (_, i) => i + 1),
-      [pdfViewMode, pdfCurrentPage, pdfTotalPages]
+      [pdfViewMode, pdfCurrentPage, pdfTotalPages],
     );
-    const getFindTextLayer = useCallback(
-      (page: number): HTMLElement | null => {
-        const container = canvasContainerRef.current;
-        if (!container) return null;
-        const layers = getAnnotationTextLayersByPage(
-          PDF_TEXT_LAYER_SELECTOR,
-          container
-        );
-        return layers.get(page) ?? null;
-      },
-      []
-    );
+    const getFindTextLayer = useCallback((page: number): HTMLElement | null => {
+      const container = canvasContainerRef.current;
+      if (!container) return null;
+      const layers = getAnnotationTextLayersByPage(
+        PDF_TEXT_LAYER_SELECTOR,
+        container,
+      );
+      return layers.get(page) ?? null;
+    }, []);
     const getFindScale = useCallback(() => pdfScale, [pdfScale]);
     const pdfFind = usePdfFind({
       pages: findPages,
@@ -317,7 +340,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
       }
 
       const pageEl = container.querySelector<HTMLElement>(
-        `[data-page-number="${pdfFind.activeMatch.page}"]`
+        `[data-page-number="${pdfFind.activeMatch.page}"]`,
       );
       pageEl?.scrollIntoView({ behavior: "smooth", block: "center" });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per locateToken bump (+ page landing in single mode)
@@ -420,7 +443,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
           startHeight: textFrameSize.height,
         };
       },
-      [textFrameSize]
+      [textFrameSize],
     );
 
     // Document-level mouse move/up for resize
@@ -491,7 +514,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
           startWidth: rightPanelWidth,
         };
       },
-      [rightPanelWidth]
+      [rightPanelWidth],
     );
 
     // Document-level mouse move/up for panel resize
@@ -541,7 +564,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         setModeState(newMode);
         onModeChange?.(newMode);
       },
-      [onModeChange]
+      [onModeChange],
     );
 
     // Tool change handler
@@ -561,7 +584,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
           setCurrentStyle(DEFAULT_SHAPE_STYLE);
         }
       },
-      [mode]
+      [mode],
     );
 
     // Style change handler
@@ -577,7 +600,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
           return newStyle;
         });
       },
-      [mode]
+      [mode],
     );
 
     // Shapes change handler (text mode)
@@ -588,7 +611,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         setStateJson(JSON.stringify({ shapes }, null, 2));
         onShapesChange?.(shapes);
       },
-      [onShapesChange]
+      [onShapesChange],
     );
 
     // Shapes change handler (PDF) - receives shapes for current page
@@ -598,7 +621,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
     const handlePdfShapesChange = useCallback(
       (rawShapes: DrawShape[]) => {
         const shapes = rawShapes.filter(
-          (shape) => resolveBehavior(shape.behavior).persisted
+          (shape) => resolveBehavior(shape.behavior).persisted,
         );
         // Get total count across all pages
         const allShapes = getAllPdfShapesFlat();
@@ -630,8 +653,8 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
               annotations: annotationsObj,
             },
             null,
-            2
-          )
+            2,
+          ),
         );
         onShapesChange?.(shapes);
       },
@@ -641,7 +664,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         pdfTotalPages,
         pdfAnnotations,
         getAllPdfShapesFlat,
-      ]
+      ],
     );
 
     // History change handler
@@ -650,7 +673,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         setCanUndo(state.canUndo);
         setCanRedo(state.canRedo);
       },
-      []
+      [],
     );
 
     // Undo handler
@@ -700,7 +723,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         const clampedPage = Math.max(1, Math.min(page, pdfTotalPages));
         setPdfCurrentPage(clampedPage);
       },
-      [pdfTotalPages]
+      [pdfTotalPages],
     );
 
     const handlePdfLoad = useCallback((numPages: number) => {
@@ -714,11 +737,11 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
     const handlePdfAnnotationsChange = useCallback(
       (page: number, rawShapes: DrawShape[]) => {
         const shapes = rawShapes.filter(
-          (shape) => resolveBehavior(shape.behavior).persisted
+          (shape) => resolveBehavior(shape.behavior).persisted,
         );
         setPdfPageAnnotations(page, shapes);
       },
-      [setPdfPageAnnotations]
+      [setPdfPageAnnotations],
     );
 
     // Export handler
@@ -749,7 +772,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
           return newConfig;
         });
       },
-      []
+      [],
     );
 
     // Reset marker settings
@@ -784,7 +807,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
           fileInputRef.current.value = "";
         }
       },
-      [handleModeChange]
+      [handleModeChange],
     );
 
     // Open PDF picker
@@ -847,7 +870,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         handleNextPage,
         handleGoToPage,
         openPdfPicker,
-      ]
+      ],
     );
 
     // Status bar items
@@ -1040,7 +1063,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                 <ToolbarButton
                   onClick={() =>
                     setPdfViewMode(
-                      pdfViewMode === "single" ? "exploded" : "single"
+                      pdfViewMode === "single" ? "exploded" : "single",
                     )
                   }
                   tokens={t}
@@ -1242,7 +1265,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                           e.preventDefault();
                           handleResizeStart(
                             "top-left",
-                            e as unknown as React.PointerEvent
+                            e as unknown as React.PointerEvent,
                           );
                         }}
                       />
@@ -1258,7 +1281,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                           e.preventDefault();
                           handleResizeStart(
                             "top-right",
-                            e as unknown as React.PointerEvent
+                            e as unknown as React.PointerEvent,
                           );
                         }}
                       />
@@ -1274,7 +1297,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                           e.preventDefault();
                           handleResizeStart(
                             "bottom-left",
-                            e as unknown as React.PointerEvent
+                            e as unknown as React.PointerEvent,
                           );
                         }}
                       />
@@ -1290,7 +1313,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                           e.preventDefault();
                           handleResizeStart(
                             "bottom-right",
-                            e as unknown as React.PointerEvent
+                            e as unknown as React.PointerEvent,
                           );
                         }}
                       />
@@ -1471,7 +1494,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                         onChange={(e) =>
                           updateMarkerSetting(
                             key as keyof MarkerSettings,
-                            parseFloat(e.target.value)
+                            parseFloat(e.target.value),
                           )
                         }
                         className={`flex-1 h-0.5 ${isDark ? "bg-zinc-800" : "bg-stone-300"} appearance-none cursor-pointer
@@ -1482,7 +1505,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
                         className={`text-[9px] ${t.textDimmer} tabular-nums w-7 text-right`}
                       >
                         {markerConfig[key as keyof MarkerSettings].toFixed(
-                          step < 1 ? 1 : 0
+                          step < 1 ? 1 : 0,
                         )}
                       </span>
                     </div>
@@ -1523,7 +1546,7 @@ export const DoodleGo = forwardRef<DoodleGoRef, DoodleGoProps>(
         <StatusBar items={statusItems} tokens={t} isDark={isDark} />
       </div>
     );
-  }
+  },
 );
 
 DoodleGo.displayName = "DoodleGo";

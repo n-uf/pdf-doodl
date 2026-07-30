@@ -34,6 +34,14 @@ export interface ShapeOutlineGlow {
 }
 
 /**
+ * Outline geometry variant.
+ * - `"ring"` (default) — a full (rounded) rect just outside the shape.
+ * - `"corner-bracket"` — four sharp L-shaped corner marks; no rounding,
+ *   no connecting edges (a camera-focus / crop style selection accent).
+ */
+export type ShapeOutlineStyle = "ring" | "corner-bracket";
+
+/**
  * Secondary outline drawn outside the shape (e.g. selection accent).
  * Widths/offset honor `ShapeStyle.screenSpaceStroke` when set on the parent style.
  */
@@ -47,6 +55,14 @@ export interface ShapeOutline {
   strokeDash?: number[];
   /** Soft glow behind the outline */
   glow?: ShapeOutlineGlow;
+  /** Outline geometry — full `"ring"` (default) or `"corner-bracket"`. */
+  style?: ShapeOutlineStyle;
+  /**
+   * Corner-bracket arm length along each edge (page units, or CSS px when the
+   * parent style sets `screenSpaceStroke`). Clamped to half the shorter side.
+   * Default 10. Ignored when `style` is `"ring"`.
+   */
+  armLength?: number;
 }
 
 /**

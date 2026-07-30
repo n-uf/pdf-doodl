@@ -52,6 +52,48 @@ function pathRect(
   ctx.closePath();
 }
 
+/** Default corner-bracket arm length (page/screen units — see ShapeOutline). */
+const DEFAULT_OUTLINE_ARM_LENGTH = 10;
+
+/**
+ * Build four sharp L-shaped corner marks (no rounding, no connecting edges)
+ * as open subpaths on the current context. Arms are clamped to half the
+ * shorter side so they never cross the midpoint on tiny rects.
+ */
+function pathCornerBrackets(
+  ctx: CanvasRenderingContext2D,
+  rect: RectGeom,
+  armLength: number
+): void {
+  const arm = Math.max(
+    0,
+    Math.min(armLength, rect.width / 2, rect.height / 2)
+  );
+  if (arm <= 0) return;
+
+  const { x, y, width, height } = rect;
+  const right = x + width;
+  const bottom = y + height;
+
+  ctx.beginPath();
+  // top-left
+  ctx.moveTo(x, y + arm);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + arm, y);
+  // top-right
+  ctx.moveTo(right - arm, y);
+  ctx.lineTo(right, y);
+  ctx.lineTo(right, y + arm);
+  // bottom-right
+  ctx.moveTo(right, bottom - arm);
+  ctx.lineTo(right, bottom);
+  ctx.lineTo(right - arm, bottom);
+  // bottom-left
+  ctx.moveTo(x + arm, bottom);
+  ctx.lineTo(x, bottom);
+  ctx.lineTo(x, bottom - arm);
+}
+
 /**
  * Render a rectangle
  */
@@ -146,14 +188,6 @@ export function renderRect(
     const outlineOffset = toPage(outline.offset ?? 0);
 
     if (outlineWidth > 0) {
-      const outlineBase = inflateRect(geom, outlineOffset);
-      const stroked = alignedStrokeRect(
-        outlineBase,
-        outlineWidth,
-        "outside",
-        cornerRadius > 0 ? cornerRadius + outlineOffset : 0
-      );
-
       ctx.save();
       ctx.strokeStyle = outline.stroke;
       ctx.globalAlpha = outline.strokeOpacity ?? 1;
@@ -176,8 +210,25 @@ export function renderRect(
         ctx.shadowOffsetY = 0;
       }
 
-      pathRect(ctx, stroked.rect, stroked.cornerRadius);
-      ctx.stroke();
+      if ((outline.style ?? "ring") === "corner-bracket") {
+        // Sharp L-corners: centre the stroke on a path outset by
+        // offset + half-width so the marks sit fully outside the shape.
+        const armLength = toPage(outline.armLength ?? DEFAULT_OUTLINE_ARM_LENGTH);
+        const bracketBase = inflateRect(geom, outlineOffset + outlineWidth / 2);
+        ctx.lineJoin = "miter";
+        pathCornerBrackets(ctx, bracketBase, armLength);
+        ctx.stroke();
+      } else {
+        const outlineBase = inflateRect(geom, outlineOffset);
+        const stroked = alignedStrokeRect(
+          outlineBase,
+          outlineWidth,
+          "outside",
+          cornerRadius > 0 ? cornerRadius + outlineOffset : 0
+        );
+        pathRect(ctx, stroked.rect, stroked.cornerRadius);
+        ctx.stroke();
+      }
       ctx.restore();
     }
   }

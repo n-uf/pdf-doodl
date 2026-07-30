@@ -49,11 +49,11 @@ const PdfAnnotationPage = lazy(() =>
   })),
 ) as React.LazyExoticComponent<React.ComponentType<PdfAnnotationPageProps>>;
 
-// Configure PDF.js worker from CDN (client-side only)
-// Uses CDN to avoid bundler issues and ensure version matching
+// Configure PDF.js worker from the version-pinned CDN (client-side only).
+// Shared helper from doodl-pdf-react — avoids bundler issues + version drift.
 if (typeof window !== "undefined") {
   import("@n-uf/pdf-doodl-pdf-react/components").then((mod) => {
-    mod.pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${mod.pdfjs.version}/build/pdf.worker.min.mjs`;
+    mod.configureDefaultPdfWorker();
   });
 }
 
