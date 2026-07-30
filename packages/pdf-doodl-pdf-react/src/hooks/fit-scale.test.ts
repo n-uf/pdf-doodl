@@ -6,6 +6,7 @@ import {
   computeFitWidthScale,
   isFitScaleActive,
   PDF_FIT_SCALE_EPSILON,
+  resolveFitScale,
 } from "./fit-scale";
 
 describe("fit-scale (uniform, axis-correct)", () => {
@@ -106,5 +107,73 @@ describe("fit-scale (uniform, axis-correct)", () => {
       false,
     );
     expect(isFitScaleActive(target - 0.25, target)).toBe(false);
+  });
+});
+
+describe("resolveFitScale (clamped, resize-tracking core)", () => {
+  const page = { width: 600, height: 900 };
+  const clampRange = { min: 0.25, max: 3 };
+
+  it("matches the unclamped mode formula inside the clamp range", () => {
+    const available = { width: 800, height: 450 };
+    expect(resolveFitScale("width", available, page, clampRange)).toBeCloseTo(
+      computeFitWidthScale(available.width, page.width),
+    );
+    expect(resolveFitScale("height", available, page, clampRange)).toBeCloseTo(
+      computeFitHeightScale(available.height, page.height),
+    );
+    expect(resolveFitScale("page", available, page, clampRange)).toBeCloseTo(
+      computeFitPageScale(
+        available.width,
+        available.height,
+        page.width,
+        page.height,
+      ),
+    );
+  });
+
+  it("clamps to the [min, max] range", () => {
+    // Very wide container → fit-width would exceed max, gets clamped down.
+    expect(
+      resolveFitScale("width", { width: 6000, height: 450 }, page, clampRange),
+    ).toBe(3);
+    // Very small container → fit-page below min, gets clamped up.
+    expect(
+      resolveFitScale("page", { width: 30, height: 30 }, page, clampRange),
+    ).toBe(0.25);
+  });
+
+  it("returns null when the policy's axis is unmeasurable (≤ 0)", () => {
+    expect(
+      resolveFitScale("width", { width: 0, height: 450 }, page, clampRange),
+    ).toBeNull();
+    expect(
+      resolveFitScale("height", { width: 800, height: 0 }, page, clampRange),
+    ).toBeNull();
+    // fit-page needs BOTH axes.
+    expect(
+      resolveFitScale("page", { width: 800, height: 0 }, page, clampRange),
+    ).toBeNull();
+    expect(
+      resolveFitScale("page", { width: 0, height: 450 }, page, clampRange),
+    ).toBeNull();
+  });
+
+  it("recomputes a larger width fit as the container grows (resize tracking)", () => {
+    const narrow = resolveFitScale(
+      "width",
+      { width: 600, height: 450 },
+      page,
+      clampRange,
+    );
+    const wide = resolveFitScale(
+      "width",
+      { width: 1200, height: 450 },
+      page,
+      clampRange,
+    );
+    expect(narrow).toBeCloseTo(1);
+    expect(wide).toBeCloseTo(2);
+    expect(wide).toBeGreaterThan(narrow ?? 0);
   });
 });

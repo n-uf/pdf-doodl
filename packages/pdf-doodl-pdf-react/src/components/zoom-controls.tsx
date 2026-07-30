@@ -12,6 +12,10 @@
  * shows the last applied mode (text only); each click applies the next.
  * An LED + `aria-pressed` light when the current scale still matches that
  * fit’s computed scale.
+ *
+ * Container-resize tracking is configured on the `viewport` hook, not here:
+ * pass `fitOnResize` (default `true`) to `usePdfViewportScale` so the applied
+ * fit stays correct — and this LED stays lit — as the container resizes.
  */
 
 import type { ReactElement } from "react";

@@ -14,14 +14,27 @@
  *   element wrapping the scrollable PDF viewport) or, when no ref is given,
  *   `window.innerWidth` / `window.innerHeight` minus `padding` (matches the
  *   original DoodleGo behavior of approximating chrome around the canvas).
+ *
+ * ### Fit policy + container-resize tracking
+ *
+ * Applying a fit (`fitWidth` / `fitHeight` / `fitPage`, or the `fitMode`
+ * option) records the **active fit policy** in {@link
+ * UsePdfViewportScaleReturn.fitMode}. While a policy is active and
+ * `fitOnResize` is on (the default), a {@link ResizeObserver} on
+ * `containerRef` — coalesced into a single `requestAnimationFrame` — keeps
+ * the viewport scale recomputed against the policy as the container resizes
+ * (Hypr/tiling pane drag, window resize, split changes, …). Recomputes are
+ * epsilon-guarded so scrollbar-driven width jitter cannot oscillate.
+ *
+ * Any manual scale change (`setScale` / `zoomIn` / `zoomOut` / `resetZoom`)
+ * exits fit tracking (`fitMode` → `null`) — the standard viewer UX where a
+ * percentage zoom "sticks" until the user re-selects a fit.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  computeFitHeightScale,
-  computeFitModeScale,
-  computeFitPageScale,
-  computeFitWidthScale,
+  PDF_FIT_SCALE_EPSILON,
+  resolveFitScale,
   type FitScaleMode,
 } from "./fit-scale";
 
@@ -58,6 +71,25 @@ export interface UsePdfViewportScaleOptions {
    * e.g. for surrounding chrome/padding not part of the measured container.
    */
   padding?: { width?: number; height?: number };
+  /**
+   * Fit policy to apply and track from the first measurable layout, before
+   * any manual zoom or fit click. `null`/omitted starts in manual mode
+   * (scale stays at `initialScale` until a fit method is called).
+   *
+   * Prefer driving the label/LED via `useCyclingFitMode` when you render a
+   * cycling fit control; this option is the low-level seed.
+   */
+  fitMode?: FitScaleMode | null;
+  /**
+   * Keep the active {@link UsePdfViewportScaleReturn.fitMode} applied as the
+   * container resizes, via a `requestAnimationFrame`-coalesced
+   * {@link ResizeObserver} on `containerRef` (falling back to `window`
+   * `resize` when no ref is given). Default: `true`.
+   *
+   * Only has an effect while a fit policy is active; manual zoom clears the
+   * policy and therefore pauses tracking until the next fit.
+   */
+  fitOnResize?: boolean;
 }
 
 export interface UsePdfViewportScaleReturn {
@@ -82,6 +114,18 @@ export interface UsePdfViewportScaleReturn {
    * (clamped), without mutating. `null` when fit cannot be computed.
    */
   getFitScale: (mode: FitScaleMode) => number | null;
+  /**
+   * The fit policy currently applied and tracked on container resize, or
+   * `null` in manual mode. Set by `fitWidth` / `fitHeight` / `fitPage` (and
+   * the `fitMode` option); cleared by any manual scale change.
+   */
+  fitMode: FitScaleMode | null;
+  /**
+   * Stop tracking the active fit policy on resize WITHOUT changing the
+   * current scale (`fitMode` → `null`). Rarely needed directly — manual
+   * zoom already does this — but handy for a bespoke "lock scale" control.
+   */
+  clearFitMode: () => void;
   /** Whether `pageSize` is known (fit methods are no-ops otherwise) */
   canFit: boolean;
   /** `scale >= maxScale` */
@@ -113,6 +157,8 @@ export function usePdfViewportScale(
     pageSize = null,
     containerRef,
     padding,
+    fitMode: initialFitMode = null,
+    fitOnResize = true,
   } = options;
 
   const clamp = useCallback(
@@ -122,24 +168,42 @@ export function usePdfViewportScale(
 
   const [scale, setScaleState] = useState(() => clamp(initialScale));
 
+  /**
+   * The active fit policy. Setting a fit applies it and starts resize
+   * tracking; a manual scale change clears it. A ref mirrors the state so the
+   * long-lived ResizeObserver callback always reads the latest policy without
+   * re-subscribing on every fit/zoom.
+   */
+  const [fitMode, setFitMode] = useState<FitScaleMode | null>(initialFitMode);
+  const fitModeRef = useRef<FitScaleMode | null>(fitMode);
+  fitModeRef.current = fitMode;
+
   const setScale = useCallback(
     (value: number) => {
+      setFitMode(null);
       setScaleState(clamp(value));
     },
     [clamp]
   );
 
   const zoomIn = useCallback(() => {
+    setFitMode(null);
     setScaleState((prev) => clamp(prev + step));
   }, [clamp, step]);
 
   const zoomOut = useCallback(() => {
+    setFitMode(null);
     setScaleState((prev) => clamp(prev - step));
   }, [clamp, step]);
 
   const resetZoom = useCallback(() => {
+    setFitMode(null);
     setScaleState(clamp(1));
   }, [clamp]);
+
+  const clearFitMode = useCallback(() => {
+    setFitMode(null);
+  }, []);
 
   /**
    * Available viewport size: content box of `containerRef` (clientWidth/Height
@@ -172,65 +236,101 @@ export function usePdfViewportScale(
     };
   }, [containerRef, padding?.width, padding?.height]);
 
-  const fitWidth = useCallback(() => {
-    if (!pageSize) return;
-    const available = measureAvailableSize();
-    if (!available || available.width <= 0) return;
-    setScaleState(
-      clamp(computeFitWidthScale(available.width, pageSize.width)),
-    );
-  }, [pageSize, measureAvailableSize, clamp]);
-
-  const fitHeight = useCallback(() => {
-    if (!pageSize) return;
-    const available = measureAvailableSize();
-    if (!available || available.height <= 0) return;
-    setScaleState(
-      clamp(computeFitHeightScale(available.height, pageSize.height)),
-    );
-  }, [pageSize, measureAvailableSize, clamp]);
-
-  const fitPage = useCallback(() => {
-    if (!pageSize) return;
-    const available = measureAvailableSize();
-    if (!available || available.width <= 0 || available.height <= 0) return;
-    setScaleState(
-      clamp(
-        computeFitPageScale(
-          available.width,
-          available.height,
-          pageSize.width,
-          pageSize.height,
-        ),
-      ),
-    );
-  }, [pageSize, measureAvailableSize, clamp]);
-
+  /**
+   * Read-only clamped scale a fit policy would apply against the current
+   * layout. `null` when `pageSize` is unknown or the container cannot yet be
+   * measured on the axis the policy needs.
+   */
   const getFitScale = useCallback(
     (mode: FitScaleMode): number | null => {
       if (!pageSize) return null;
       const available = measureAvailableSize();
       if (!available) return null;
-      if (mode === "width" && available.width <= 0) return null;
-      if (mode === "height" && available.height <= 0) return null;
-      if (
-        mode === "page" &&
-        (available.width <= 0 || available.height <= 0)
-      ) {
-        return null;
-      }
-      return clamp(
-        computeFitModeScale(
-          mode,
-          available.width,
-          available.height,
-          pageSize.width,
-          pageSize.height,
-        ),
-      );
+      return resolveFitScale(mode, available, pageSize, {
+        min: minScale,
+        max: maxScale,
+      });
     },
-    [pageSize, measureAvailableSize, clamp],
+    [pageSize, measureAvailableSize, minScale, maxScale],
   );
+
+  /**
+   * Apply a fit policy: record it as the active `fitMode` (so resize tracking
+   * takes over) and set the scale when the container is measurable. The mode
+   * is recorded even if the scale can't be computed yet — a still-collapsed
+   * container — so the ResizeObserver applies it on the first real layout.
+   */
+  const applyFit = useCallback(
+    (mode: FitScaleMode) => {
+      if (!pageSize) return;
+      setFitMode(mode);
+      const target = getFitScale(mode);
+      if (target !== null) setScaleState(target);
+    },
+    [pageSize, getFitScale],
+  );
+
+  const fitWidth = useCallback(() => applyFit("width"), [applyFit]);
+  const fitHeight = useCallback(() => applyFit("height"), [applyFit]);
+  const fitPage = useCallback(() => applyFit("page"), [applyFit]);
+
+  /**
+   * Recompute + apply the active fit policy against the latest layout.
+   * Reads the policy from `fitModeRef` so the ResizeObserver callback stays
+   * stable, and no-ops unless the scale actually moves (epsilon guard) so a
+   * scrollbar appearing/disappearing on re-layout cannot start an oscillation.
+   */
+  const reapplyActiveFit = useCallback(() => {
+    const mode = fitModeRef.current;
+    if (mode === null) return;
+    const target = getFitScale(mode);
+    if (target === null) return;
+    setScaleState((prev) =>
+      Math.abs(prev - target) <= PDF_FIT_SCALE_EPSILON ? prev : target,
+    );
+  }, [getFitScale]);
+
+  // Container-resize tracking: keep the active fit policy applied as the
+  // container (or window) changes size. rAF-coalesced so a burst of resize
+  // callbacks collapses into one recompute per frame.
+  useEffect(() => {
+    if (!fitOnResize) return;
+
+    let rafId = 0;
+    const schedule = (): void => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(reapplyActiveFit);
+    };
+
+    const element = containerRef?.current ?? null;
+    if (element) {
+      const observer = new ResizeObserver(schedule);
+      observer.observe(element);
+      return () => {
+        observer.disconnect();
+        cancelAnimationFrame(rafId);
+      };
+    }
+
+    if (typeof window === "undefined") return;
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("resize", schedule);
+      cancelAnimationFrame(rafId);
+    };
+    // `reapplyActiveFit` identity changes with `pageSize` (via getFitScale),
+    // which is when a just-mounted container also becomes measurable — so the
+    // observer re-attaches to the real element rather than the window fallback.
+  }, [fitOnResize, containerRef, reapplyActiveFit]);
+
+  // Seed the active fit once it first becomes computable — covers the
+  // `fitMode` option with the window fallback (no initial `resize` event),
+  // and re-fits when `pageSize` first arrives. Idempotent: the epsilon guard
+  // in `reapplyActiveFit` makes a no-op when the scale already matches.
+  useEffect(() => {
+    if (fitMode === null) return;
+    reapplyActiveFit();
+  }, [fitMode, reapplyActiveFit]);
 
   return {
     scale,
@@ -242,6 +342,8 @@ export function usePdfViewportScale(
     fitHeight,
     fitPage,
     getFitScale,
+    fitMode,
+    clearFitMode,
     canFit: pageSize !== null,
     atMaxZoom: scale >= maxScale,
     atMinZoom: scale <= minScale,

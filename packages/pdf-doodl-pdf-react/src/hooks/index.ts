@@ -40,9 +40,12 @@ export {
   computeFitHeightScale,
   computeFitPageScale,
   computeFitModeScale,
+  resolveFitScale,
   isFitScaleActive,
   PDF_FIT_SCALE_EPSILON,
   type FitScaleMode,
+  type FitScaleClampRange,
+  type FitAvailableSize,
 } from "./fit-scale";
 export {
   usePdfFind,

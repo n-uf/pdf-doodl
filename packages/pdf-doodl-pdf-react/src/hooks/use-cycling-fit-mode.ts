@@ -15,6 +15,12 @@
  * `isActive` is true only while the current zoom still matches that mode’s
  * computed fit scale (within {@link PDF_FIT_SCALE_EPSILON}). Manual zoom
  * turns the LED off without changing the label.
+ *
+ * Container-resize tracking lives in `usePdfViewportScale`
+ * (`fitMode` + `fitOnResize`): applying a fit through this cycle records the
+ * active policy on the viewport, so with `fitOnResize` on (the default) the
+ * scale — and therefore this LED — stays lit across container resizes. With
+ * tracking off, a resize leaves the scale stale and the LED correctly drops.
  */
 
 import {
