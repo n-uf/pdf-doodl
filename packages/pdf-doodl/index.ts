@@ -232,9 +232,13 @@ export {
   mergeBounds,
   NO_ACTION,
   normalizeOccurrenceLexeme,
+  DEFAULT_OCCURRENCE_HIGHLIGHT_ROLE_STYLES,
   resetStyle,
   resolveBlockSubrangeHighlight,
   resolveOccurrenceCharRange,
+  resolveOccurrenceHighlightsWithRoles,
+  shapesForOccurrenceHighlightRoles,
+  styleForOccurrenceHighlightRole,
   SUBRANGE_HIGHLIGHT_STYLE,
 } from "./src/shapes";
 export type {
@@ -244,7 +248,14 @@ export type {
   BlockSubrangeHighlightSpec,
   CharRange,
   FindTextOptions,
+  OccurrenceHighlightRole,
+  OccurrenceHighlightRoleStyles,
   ResolveBlockSubrangeHighlightOptions,
+  ResolveOccurrenceHighlightsWithRolesOptions,
+  ResolveOccurrenceHighlightsWithRolesResult,
+  RoleTaggedOccurrenceBox,
+  RoleTaggedOccurrenceResolveItem,
+  ShapesForOccurrenceHighlightRolesOptions,
   TextMatch,
 } from "./src/shapes";
 

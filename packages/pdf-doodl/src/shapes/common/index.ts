@@ -88,6 +88,11 @@ export {
   resolveBlockSubrangeHighlight,
   resolveOccurrenceCharRange,
   SUBRANGE_HIGHLIGHT_STYLE,
+  // Role-tagged multi-occurrence highlight painting
+  DEFAULT_OCCURRENCE_HIGHLIGHT_ROLE_STYLES,
+  resolveOccurrenceHighlightsWithRoles,
+  shapesForOccurrenceHighlightRoles,
+  styleForOccurrenceHighlightRole,
 } from "./utils";
 
 export type {
@@ -99,9 +104,16 @@ export type {
   CharRange,
   FindTextOptions,
   IntersectionMode,
+  OccurrenceHighlightRole,
+  OccurrenceHighlightRoleStyles,
   RectGeom,
   ResolveBlockSubrangeHighlightOptions,
+  ResolveOccurrenceHighlightsWithRolesOptions,
+  ResolveOccurrenceHighlightsWithRolesResult,
+  RoleTaggedOccurrenceBox,
+  RoleTaggedOccurrenceResolveItem,
   ShapeRenderContext,
+  ShapesForOccurrenceHighlightRolesOptions,
   TextMatch,
   TextMatchMode,
   TextNodeInfo,

@@ -97,3 +97,20 @@ export type {
   CharRange,
   ResolveBlockSubrangeHighlightOptions,
 } from "./block-subrange-highlight";
+
+// Role-tagged multi-occurrence highlight painting
+export {
+  DEFAULT_OCCURRENCE_HIGHLIGHT_ROLE_STYLES,
+  resolveOccurrenceHighlightsWithRoles,
+  shapesForOccurrenceHighlightRoles,
+  styleForOccurrenceHighlightRole,
+} from "./occurrence-highlight-roles";
+export type {
+  OccurrenceHighlightRole,
+  OccurrenceHighlightRoleStyles,
+  ResolveOccurrenceHighlightsWithRolesOptions,
+  ResolveOccurrenceHighlightsWithRolesResult,
+  RoleTaggedOccurrenceBox,
+  RoleTaggedOccurrenceResolveItem,
+  ShapesForOccurrenceHighlightRolesOptions,
+} from "./occurrence-highlight-roles";
