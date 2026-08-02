@@ -20,6 +20,7 @@ export {
   getPdfFitCycleTitle,
   fitCycleTitleFromReturn,
   nextPdfFitMode,
+  resolveCyclingFitApplyMode,
   computeFitWidthScale,
   computeFitHeightScale,
   computeFitPageScale,

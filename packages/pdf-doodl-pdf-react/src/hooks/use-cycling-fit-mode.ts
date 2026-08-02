@@ -3,10 +3,13 @@
 /**
  * Cycles fit-width → fit-height → fit-page through a single control.
  *
- * The button shows the **last applied** fit mode (current page fit). On click
- * it applies the *next* mode in the cycle and updates the label to match —
- * so the label always agrees with the scale on screen (avoids reading
- * “height” while the page is still width-fitted).
+ * The button shows the **last applied** fit mode (or `initialMode` before the
+ * first apply). Click semantics:
+ * - LED off (`isActive` false) → re-apply the **shown** mode only (no advance)
+ * - LED on → apply the *next* mode and update the label to match
+ *
+ * That way a dimmed “width” after manual zoom re-enables width; cycling to
+ * height/page only happens while the shown fit is already active.
  *
  * With {@link UseCyclingFitModeOptions.applyInitialFit}, `initialMode`
  * is applied once the viewport can measure a fit (default off — label-only
@@ -175,7 +178,26 @@ export function nextPdfFitMode(mode: PdfFitMode): PdfFitMode {
   return PDF_FIT_MODE_ORDER[nextIndex] ?? "width";
 }
 
-/** Tooltip / aria for the fit-cycle control (label = current, click → next). */
+/**
+ * Which fit mode a click should apply.
+ * Inactive / never applied → shown mode (re-enable). Active → next in cycle.
+ */
+export function resolveCyclingFitApplyMode(
+  lastApplied: PdfFitMode | null,
+  initialMode: PdfFitMode,
+  isActive: boolean,
+): PdfFitMode {
+  const shown = lastApplied ?? initialMode;
+  return lastApplied !== null && isActive
+    ? nextPdfFitMode(lastApplied)
+    : shown;
+}
+
+/**
+ * Tooltip / aria for the fit-cycle control.
+ * When `next` equals `current`, click re-applies (LED off / first apply);
+ * otherwise click advances to `next`.
+ */
 export function getPdfFitCycleTitle(
   current: PdfFitModeDescriptor,
   next: PdfFitModeDescriptor,
@@ -218,7 +240,10 @@ export interface UseCyclingFitModeReturn {
    * the first click.
    */
   mode: PdfFitMode;
-  /** Mode that the next `cycleFit()` will apply. */
+  /**
+   * Mode that the next `cycleFit()` will apply — the shown mode when inactive
+   * (re-enable), otherwise the next mode in the cycle.
+   */
   nextMode: PdfFitMode;
   descriptor: PdfFitModeDescriptor;
   nextDescriptor: PdfFitModeDescriptor;
@@ -228,7 +253,10 @@ export interface UseCyclingFitModeReturn {
    * epsilon. Turns off when the user zooms ± away.
    */
   isActive: boolean;
-  /** Apply the next fit mode in the cycle and update the label to match. */
+  /**
+   * Re-apply the shown fit when inactive; advance width → height → page when
+   * the shown fit is already active.
+   */
   cycleFit: () => void;
 }
 
@@ -263,14 +291,18 @@ export function useCyclingFitMode(
   const seededRef = useRef(false);
 
   const mode = lastApplied ?? initialMode;
-  const nextMode =
-    lastApplied === null ? initialMode : nextPdfFitMode(lastApplied);
-  const descriptor = getPdfFitModeDescriptor(mode);
-  const nextDescriptor = getPdfFitModeDescriptor(nextMode);
 
   const targetScale = getFitScale(mode);
   const isActive =
     targetScale !== null && isFitScaleActive(scale, targetScale, activeEpsilon);
+
+  const nextMode = resolveCyclingFitApplyMode(
+    lastApplied,
+    initialMode,
+    isActive,
+  );
+  const descriptor = getPdfFitModeDescriptor(mode);
+  const nextDescriptor = getPdfFitModeDescriptor(nextMode);
 
   // Apply the advertised default fit once layout can measure (container may
   // still be 0×0 on the first paint after pageSize arrives).
@@ -313,12 +345,15 @@ export function useCyclingFitMode(
   ]);
 
   const cycleFit = useCallback(() => {
-    const toApply =
-      lastApplied === null ? initialMode : nextPdfFitMode(lastApplied);
+    const toApply = resolveCyclingFitApplyMode(
+      lastApplied,
+      initialMode,
+      isActive,
+    );
     applyFitMode(toApply, { fitWidth, fitHeight, fitPage });
     setLastApplied(toApply);
     seededRef.current = true;
-  }, [lastApplied, initialMode, fitWidth, fitHeight, fitPage]);
+  }, [lastApplied, initialMode, isActive, fitWidth, fitHeight, fitPage]);
 
   return {
     mode,

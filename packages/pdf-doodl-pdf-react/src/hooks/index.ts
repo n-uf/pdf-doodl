@@ -16,6 +16,7 @@ export {
   getPdfFitCycleTitle,
   fitCycleTitleFromReturn,
   nextPdfFitMode,
+  resolveCyclingFitApplyMode,
   PDF_FIT_CYCLE_ACTIVE_CLASS,
   PDF_FIT_CYCLE_BUTTON_CLASS,
   PDF_FIT_CYCLE_BUTTON_STYLE,
