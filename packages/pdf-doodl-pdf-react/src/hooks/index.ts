@@ -41,11 +41,15 @@ export {
   computeFitPageScale,
   computeFitModeScale,
   resolveFitScale,
+  resolveMeasuredAvailableSize,
   isFitScaleActive,
   PDF_FIT_SCALE_EPSILON,
   type FitScaleMode,
   type FitScaleClampRange,
   type FitAvailableSize,
+  type PdfMeasureBox,
+  type ContainerBoxMetrics,
+  type MeasureBoxInsets,
 } from "./fit-scale";
 export {
   usePdfFind,
