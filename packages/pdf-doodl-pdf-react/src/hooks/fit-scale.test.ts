@@ -7,6 +7,7 @@ import {
   isFitScaleActive,
   PDF_FIT_SCALE_EPSILON,
   resolveFitScale,
+  resolveMeasuredAvailableSize,
 } from "./fit-scale";
 
 describe("fit-scale (uniform, axis-correct)", () => {
@@ -175,5 +176,53 @@ describe("resolveFitScale (clamped, resize-tracking core)", () => {
     expect(narrow).toBeCloseTo(1);
     expect(wide).toBeCloseTo(2);
     expect(wide).toBeGreaterThan(narrow ?? 0);
+  });
+});
+
+describe("resolveMeasuredAvailableSize (measure box + insets)", () => {
+  const metrics = {
+    clientWidth: 800,
+    clientHeight: 600,
+    paddingX: 24,
+    paddingY: 24,
+  };
+
+  it('"content" subtracts the container CSS padding on both axes', () => {
+    expect(resolveMeasuredAvailableSize(metrics, "content")).toEqual({
+      width: 800 - 24,
+      height: 600 - 24,
+    });
+  });
+
+  it('"client" ignores the container CSS padding (edge-to-edge)', () => {
+    expect(resolveMeasuredAvailableSize(metrics, "client")).toEqual({
+      width: 800,
+      height: 600,
+    });
+  });
+
+  it("subtracts extra insets under either box", () => {
+    const insets = { width: 2, height: 2 };
+    expect(resolveMeasuredAvailableSize(metrics, "content", insets)).toEqual({
+      width: 800 - 24 - 2,
+      height: 600 - 24 - 2,
+    });
+    expect(resolveMeasuredAvailableSize(metrics, "client", insets)).toEqual({
+      width: 800 - 2,
+      height: 600 - 2,
+    });
+  });
+
+  it("client minus content equals the CSS padding on each axis", () => {
+    const content = resolveMeasuredAvailableSize(metrics, "content");
+    const client = resolveMeasuredAvailableSize(metrics, "client");
+    expect(client.width - content.width).toBe(metrics.paddingX);
+    expect(client.height - content.height).toBe(metrics.paddingY);
+  });
+
+  it("treats missing inset axes as zero", () => {
+    expect(
+      resolveMeasuredAvailableSize(metrics, "client", { height: 2 }),
+    ).toEqual({ width: 800, height: 598 });
   });
 });

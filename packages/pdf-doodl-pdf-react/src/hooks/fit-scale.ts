@@ -67,10 +67,71 @@ export interface FitScaleClampRange {
   max: number;
 }
 
-/** Measured available (content-box) viewport size, in CSS px. */
+/** Measured available viewport size, in CSS px. */
 export interface FitAvailableSize {
   width: number;
   height: number;
+}
+
+/**
+ * Which CSS box of the measured container drives the available fit size.
+ *
+ * - `"content"`: the container's **content box** — `clientWidth`/`clientHeight`
+ *   minus its own CSS padding. The default; leaves the container's padding as
+ *   visible breathing room around the fitted page.
+ * - `"client"`: the full **client box** — `clientWidth`/`clientHeight` with the
+ *   container's CSS padding *ignored*. Use for an edge-to-edge fit (e.g. a page
+ *   that should fill right up to a surrounding titlebar/pane edge); the host is
+ *   then responsible for any inset it still wants via {@link MeasureBoxInsets}.
+ *
+ * Both boxes exclude the border and any scrollbar, since `clientWidth`/
+ * `clientHeight` already do.
+ */
+export type PdfMeasureBox = "content" | "client";
+
+/**
+ * Geometry read from a measured container, in CSS px. `clientWidth`/
+ * `clientHeight` are the DOM client-box dimensions (border + scrollbar already
+ * excluded); `paddingX`/`paddingY` are the summed left+right / top+bottom CSS
+ * padding used to derive the content box.
+ */
+export interface ContainerBoxMetrics {
+  clientWidth: number;
+  clientHeight: number;
+  paddingX: number;
+  paddingY: number;
+}
+
+/**
+ * Extra chrome (in CSS px) to subtract from the chosen measure box on each
+ * axis — e.g. a page-card border the container's own padding does not cover.
+ */
+export interface MeasureBoxInsets {
+  width?: number;
+  height?: number;
+}
+
+/**
+ * Available fit size from a measured container, per {@link PdfMeasureBox}.
+ *
+ * Pure and side-effect free (takes already-read geometry, touches no DOM) so
+ * the measure-box branching can be unit-tested and stays identical between a
+ * one-shot fit and resize-tracked recomputes. The caller reads
+ * `clientWidth`/`clientHeight` + computed padding once and passes them in.
+ */
+export function resolveMeasuredAvailableSize(
+  metrics: ContainerBoxMetrics,
+  measureBox: PdfMeasureBox,
+  insets?: MeasureBoxInsets,
+): FitAvailableSize {
+  const insetWidth = insets?.width ?? 0;
+  const insetHeight = insets?.height ?? 0;
+  const padX = measureBox === "content" ? metrics.paddingX : 0;
+  const padY = measureBox === "content" ? metrics.paddingY : 0;
+  return {
+    width: metrics.clientWidth - padX - insetWidth,
+    height: metrics.clientHeight - padY - insetHeight,
+  };
 }
 
 /**

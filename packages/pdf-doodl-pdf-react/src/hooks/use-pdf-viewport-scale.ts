@@ -35,7 +35,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   PDF_FIT_SCALE_EPSILON,
   resolveFitScale,
+  resolveMeasuredAvailableSize,
   type FitScaleMode,
+  type PdfMeasureBox,
 } from "./fit-scale";
 
 // =============================================================================
@@ -68,9 +70,26 @@ export interface UsePdfViewportScaleOptions {
   containerRef?: React.RefObject<HTMLElement | null>;
   /**
    * Space (in CSS px) to subtract from the measured viewport before fitting,
-   * e.g. for surrounding chrome/padding not part of the measured container.
+   * e.g. for surrounding chrome/padding not part of the measured container
+   * (a page-card border, a scrollport gutter, …). Applied under either
+   * {@link UsePdfViewportScaleOptions.measureBox}.
    */
   padding?: { width?: number; height?: number };
+  /**
+   * Which CSS box of `containerRef` drives the available fit size:
+   *
+   * - `"content"` (default): the container's **content box** —
+   *   `clientWidth`/`clientHeight` minus its own CSS padding. The container's
+   *   padding stays as visible breathing room around the fitted page.
+   * - `"client"`: the full **client box** — `clientWidth`/`clientHeight` with
+   *   the container's CSS padding *ignored*, for an edge-to-edge fit (e.g. a
+   *   page filling right up to a titlebar/pane edge). The host then owns any
+   *   remaining inset via {@link UsePdfViewportScaleOptions.padding}.
+   *
+   * Only affects the `containerRef` path; the `window` fallback has no CSS
+   * padding to distinguish, so both boxes measure `innerWidth`/`innerHeight`.
+   */
+  measureBox?: PdfMeasureBox;
   /**
    * Fit policy to apply and track from the first measurable layout, before
    * any manual zoom or fit click. `null`/omitted starts in manual mode
@@ -157,6 +176,7 @@ export function usePdfViewportScale(
     pageSize = null,
     containerRef,
     padding,
+    measureBox = "content",
     fitMode: initialFitMode = null,
     fitOnResize = true,
   } = options;
@@ -206,35 +226,45 @@ export function usePdfViewportScale(
   }, []);
 
   /**
-   * Available viewport size: content box of `containerRef` (clientWidth/Height
-   * minus CSS padding), else window, minus optional extra `padding`.
-   * Width and height are never swapped.
+   * Available viewport size for the active `measureBox`: the content box
+   * (`clientWidth`/`clientHeight` minus CSS padding) or the full client box of
+   * `containerRef`, else the window, minus the optional extra `padding` inset.
+   * DOM geometry is read here; the box math lives in the pure
+   * {@link resolveMeasuredAvailableSize}. Width and height are never swapped.
    */
   const measureAvailableSize = useCallback((): PdfPageSize | null => {
-    const paddingWidth = padding?.width ?? 0;
-    const paddingHeight = padding?.height ?? 0;
+    const insets = {
+      width: padding?.width ?? 0,
+      height: padding?.height ?? 0,
+    };
 
     const container = containerRef?.current;
     if (container) {
       const style = getComputedStyle(container);
-      const padX =
+      const paddingX =
         (Number.parseFloat(style.paddingLeft) || 0) +
         (Number.parseFloat(style.paddingRight) || 0);
-      const padY =
+      const paddingY =
         (Number.parseFloat(style.paddingTop) || 0) +
         (Number.parseFloat(style.paddingBottom) || 0);
-      return {
-        width: container.clientWidth - padX - paddingWidth,
-        height: container.clientHeight - padY - paddingHeight,
-      };
+      return resolveMeasuredAvailableSize(
+        {
+          clientWidth: container.clientWidth,
+          clientHeight: container.clientHeight,
+          paddingX,
+          paddingY,
+        },
+        measureBox,
+        insets,
+      );
     }
 
     if (typeof window === "undefined") return null;
     return {
-      width: window.innerWidth - paddingWidth,
-      height: window.innerHeight - paddingHeight,
+      width: window.innerWidth - insets.width,
+      height: window.innerHeight - insets.height,
     };
-  }, [containerRef, padding?.width, padding?.height]);
+  }, [containerRef, padding?.width, padding?.height, measureBox]);
 
   /**
    * Read-only clamped scale a fit policy would apply against the current
