@@ -80,3 +80,20 @@ export type {
   TextMatch,
   TextMatchMode,
 } from "./text-bounds-finder";
+
+// Occurrence / sub-block highlight (normalized nth hit → shapes)
+export {
+  listOccurrenceCharRanges,
+  normalizeOccurrenceLexeme,
+  resolveBlockSubrangeHighlight,
+  resolveOccurrenceCharRange,
+  SUBRANGE_HIGHLIGHT_STYLE,
+} from "./block-subrange-highlight";
+export type {
+  BlockCharRangeHighlightSpec,
+  BlockOccurrenceHighlightSpec,
+  BlockSubrangeHighlightResult,
+  BlockSubrangeHighlightSpec,
+  CharRange,
+  ResolveBlockSubrangeHighlightOptions,
+} from "./block-subrange-highlight";

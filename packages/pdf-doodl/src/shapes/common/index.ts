@@ -82,13 +82,25 @@ export {
   // Text bounds finder (text → bounds)
   findTextInTextLayer,
   hasTextInTextLayer,
+  // Occurrence / sub-block highlight
+  listOccurrenceCharRanges,
+  normalizeOccurrenceLexeme,
+  resolveBlockSubrangeHighlight,
+  resolveOccurrenceCharRange,
+  SUBRANGE_HIGHLIGHT_STYLE,
 } from "./utils";
 
 export type {
+  BlockCharRangeHighlightSpec,
+  BlockOccurrenceHighlightSpec,
+  BlockSubrangeHighlightResult,
+  BlockSubrangeHighlightSpec,
   CanvasContextOptions,
+  CharRange,
   FindTextOptions,
   IntersectionMode,
   RectGeom,
+  ResolveBlockSubrangeHighlightOptions,
   ShapeRenderContext,
   TextMatch,
   TextMatchMode,

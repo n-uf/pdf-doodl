@@ -226,12 +226,27 @@ export {
   hasTextInTextLayer,
   isMultiClickController,
   isPointInBounds,
+  // Occurrence / sub-block highlight
+  listOccurrenceCharRanges,
   mapBlendMode,
   mergeBounds,
   NO_ACTION,
+  normalizeOccurrenceLexeme,
   resetStyle,
+  resolveBlockSubrangeHighlight,
+  resolveOccurrenceCharRange,
+  SUBRANGE_HIGHLIGHT_STYLE,
 } from "./src/shapes";
-export type { FindTextOptions, TextMatch } from "./src/shapes";
+export type {
+  BlockCharRangeHighlightSpec,
+  BlockOccurrenceHighlightSpec,
+  BlockSubrangeHighlightResult,
+  BlockSubrangeHighlightSpec,
+  CharRange,
+  FindTextOptions,
+  ResolveBlockSubrangeHighlightOptions,
+  TextMatch,
+} from "./src/shapes";
 
 // Rect
 export {

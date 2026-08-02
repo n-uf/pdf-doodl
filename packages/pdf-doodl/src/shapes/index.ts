@@ -47,6 +47,8 @@ export {
   findTextInTextLayer,
   findTopmostShapeAtPoint,
   generateShapeId,
+  // Occurrence / sub-block highlight
+  listOccurrenceCharRanges,
   // DPR utilities
   getDevicePixelRatio,
   getIntersectionArea,
@@ -68,6 +70,7 @@ export {
   isMultiClickController,
   isPointInBounds,
   isPointInShape,
+  normalizeOccurrenceLexeme,
   // Behavior checks (per-shape)
   isShapeDeletable,
   isShapeEditable,
@@ -89,6 +92,8 @@ export {
   // Behavior-aware rendering
   renderShapeWithBehavior,
   resetStyle,
+  resolveBlockSubrangeHighlight,
+  resolveOccurrenceCharRange,
   resolveStyleLength,
   runWithShapeRenderContext,
   setShapeRenderContext,
@@ -102,11 +107,17 @@ export {
   snapToPixelFloor,
   sortShapesByBehavior,
   styleRenderPadding,
+  SUBRANGE_HIGHLIGHT_STYLE,
   transformShape,
 } from "./common";
 
 export type {
+  BlockCharRangeHighlightSpec,
+  BlockOccurrenceHighlightSpec,
+  BlockSubrangeHighlightResult,
+  BlockSubrangeHighlightSpec,
   CanvasContextOptions,
+  CharRange,
   ControllerAction,
   ControllerContext,
   DrawingController,
@@ -117,6 +128,7 @@ export type {
   IntersectionMode,
   MultiClickController,
   RectGeom,
+  ResolveBlockSubrangeHighlightOptions,
   ShapeEditMode,
   ShapeEditState,
   ShapeModule,
